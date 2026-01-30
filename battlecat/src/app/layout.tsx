@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { DarkModeToggle } from "@/components/DarkModeToggle";
+import { MobileNav } from "@/components/MobileNav";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -20,6 +21,7 @@ const NAV_LINKS = [
   { href: "/browse", label: "Browse" },
   { href: "/paths", label: "Paths" },
   { href: "/level-up", label: "Level Up" },
+  { href: "/bookmarks", label: "Bookmarks" },
   { href: "/search", label: "Search" },
   { href: "/submit", label: "Submit" },
 ];
@@ -43,7 +45,9 @@ export default function RootLayout({
                 AI
               </span>
             </Link>
-            <div className="flex items-center gap-1">
+
+            {/* Desktop nav — hidden on mobile */}
+            <div className="hidden items-center gap-1 md:flex">
               {NAV_LINKS.map((link) => (
                 <Link
                   key={link.href}
@@ -54,6 +58,12 @@ export default function RootLayout({
                 </Link>
               ))}
               <DarkModeToggle />
+            </div>
+
+            {/* Mobile nav — visible on mobile only */}
+            <div className="flex items-center gap-1 md:hidden">
+              <DarkModeToggle />
+              <MobileNav />
             </div>
           </div>
         </nav>

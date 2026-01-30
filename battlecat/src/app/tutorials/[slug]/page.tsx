@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getLevel } from "@/config/levels";
 import { getTutorialBySlug, getAllTutorials } from "@/data/seed-tutorials";
 import { LevelBadge } from "@/components/LevelBadge";
+import { TutorialActions } from "@/components/TutorialActions";
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -65,6 +66,13 @@ export default async function TutorialPage({ params }: Props) {
           ))}
         </div>
       </header>
+
+      {/* Actions: bookmark, complete, share, notes */}
+      <TutorialActions
+        tutorialId={tutorial.id}
+        tutorialTitle={tutorial.title}
+        tutorialSlug={tutorial.slug}
+      />
 
       {/* Body */}
       <div
