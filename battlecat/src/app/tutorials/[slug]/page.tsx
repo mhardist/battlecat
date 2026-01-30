@@ -1,105 +1,88 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getLevel } from "@/config/levels";
-import { MaturityLevel } from "@/types";
+import { getTutorialBySlug, getAllTutorials } from "@/data/seed-tutorials";
+import { LevelBadge } from "@/components/LevelBadge";
 
 interface Props {
   params: Promise<{ slug: string }>;
 }
 
-/**
- * Tutorial detail page.
- * In production, this fetches from Supabase.
- * For now, shows the page structure.
- */
+/** Pre-generate paths for seed tutorials */
+export function generateStaticParams() {
+  return getAllTutorials().map((t) => ({ slug: t.slug }));
+}
+
 export default async function TutorialPage({ params }: Props) {
   const { slug } = await params;
-
-  // TODO: Fetch tutorial from Supabase by slug
-  // const { data: tutorial } = await supabase
-  //   .from("tutorials")
-  //   .select("*")
-  //   .eq("slug", slug)
-  //   .eq("is_published", true)
-  //   .single();
-
-  // Placeholder for development
-  const tutorial = null;
+  const tutorial = getTutorialBySlug(slug);
 
   if (!tutorial) {
     notFound();
   }
 
-  // Type assertion for when real data is connected
-  const t = tutorial as {
-    title: string;
-    summary: string;
-    body: string;
-    maturity_level: MaturityLevel;
-    level_relation: string;
-    topics: string[];
-    tags: string[];
-    tools_mentioned: string[];
-    difficulty: string;
-    action_items: string[];
-    source_urls: string[];
-    source_count: number;
-    created_at: string;
-    updated_at: string;
-  };
-
-  const level = getLevel(t.maturity_level);
+  const level = getLevel(tutorial.maturity_level);
 
   return (
     <article className="space-y-8">
       {/* Header */}
       <header className="space-y-3">
-        <div className="flex items-center gap-2">
-          <Link
-            href={`/levels/${t.maturity_level}`}
-            className="rounded-full px-3 py-1 text-sm font-bold text-white"
-            style={{ backgroundColor: level.color }}
-          >
-            L{t.maturity_level} {level.name}
-          </Link>
-          <span className="text-sm text-bc-text-secondary">
-            {t.level_relation}
+        <div className="flex items-center gap-3 flex-wrap">
+          <LevelBadge
+            level={tutorial.maturity_level}
+            relation={tutorial.level_relation}
+            size="md"
+          />
+          <span className="rounded-full border border-bc-border px-2.5 py-0.5 text-xs font-medium text-bc-text-secondary capitalize">
+            {tutorial.difficulty}
           </span>
-          <span className="text-sm text-bc-text-secondary">
-            {t.difficulty}
-          </span>
+          {tutorial.source_count > 1 && (
+            <span className="text-xs text-bc-text-secondary">
+              Synthesized from {tutorial.source_count} sources
+            </span>
+          )}
         </div>
-        <h1 className="text-3xl font-bold">{t.title}</h1>
-        <p className="text-lg text-bc-text-secondary">{t.summary}</p>
-        <div className="flex flex-wrap gap-1">
-          {t.tags.map((tag) => (
+
+        <h1 className="text-3xl font-bold">{tutorial.title}</h1>
+        <p className="text-lg text-bc-text-secondary">{tutorial.summary}</p>
+
+        <div className="flex flex-wrap gap-1.5">
+          {tutorial.topics.map((topic) => (
             <span
-              key={tag}
-              className="rounded-full bg-bc-border px-2 py-0.5 text-xs text-bc-text-secondary"
+              key={topic}
+              className="rounded-full bg-bc-primary/10 px-2.5 py-0.5 text-xs font-medium text-bc-primary"
             >
-              {tag}
+              {topic}
+            </span>
+          ))}
+          {tutorial.tools_mentioned.map((tool) => (
+            <span
+              key={tool}
+              className="rounded-full bg-bc-border px-2.5 py-0.5 text-xs text-bc-text-secondary"
+            >
+              {tool}
             </span>
           ))}
         </div>
       </header>
 
       {/* Body */}
-      <div className="prose max-w-none dark:prose-invert">
-        {/* In production, render markdown body */}
-        <div dangerouslySetInnerHTML={{ __html: t.body }} />
-      </div>
+      <div
+        className="prose prose-lg max-w-none dark:prose-invert prose-headings:font-bold prose-a:text-bc-primary prose-strong:font-semibold"
+        dangerouslySetInnerHTML={{ __html: tutorial.body }}
+      />
 
       {/* Action Items */}
-      {t.action_items.length > 0 && (
-        <section className="rounded-lg border-l-4 border-l-bc-secondary bg-bc-surface p-6">
+      {tutorial.action_items.length > 0 && (
+        <section className="rounded-xl border-l-4 border-l-bc-secondary bg-bc-surface p-6 shadow-sm">
           <h2 className="text-xl font-bold text-bc-secondary">
             Try This
           </h2>
-          <ul className="mt-3 space-y-2">
-            {t.action_items.map((item, i) => (
-              <li key={i} className="flex items-start gap-2">
-                <span className="mt-1 text-bc-secondary font-bold">
-                  {i + 1}.
+          <ul className="mt-4 space-y-3">
+            {tutorial.action_items.map((item, i) => (
+              <li key={i} className="flex items-start gap-3">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-bc-secondary text-xs font-bold text-white">
+                  {i + 1}
                 </span>
                 <span>{item}</span>
               </li>
@@ -109,19 +92,22 @@ export default async function TutorialPage({ params }: Props) {
       )}
 
       {/* Sources */}
-      {t.source_urls.length > 0 && (
-        <section className="space-y-2">
+      {tutorial.source_urls.length > 0 && (
+        <section className="space-y-3 border-t border-bc-border pt-6">
           <h3 className="text-sm font-medium text-bc-text-secondary">
-            Sources ({t.source_count})
+            Sources ({tutorial.source_count})
           </h3>
-          <ul className="space-y-1">
-            {t.source_urls.map((url, i) => (
-              <li key={i}>
+          <ul className="space-y-1.5">
+            {tutorial.source_urls.map((url, i) => (
+              <li key={i} className="flex items-center gap-2">
+                <svg className="h-3.5 w-3.5 shrink-0 text-bc-text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                </svg>
                 <a
                   href={url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-sm text-bc-primary hover:underline"
+                  className="text-sm text-bc-primary hover:underline truncate"
                 >
                   {url}
                 </a>
@@ -130,6 +116,22 @@ export default async function TutorialPage({ params }: Props) {
           </ul>
         </section>
       )}
+
+      {/* Navigation */}
+      <nav className="flex items-center justify-between border-t border-bc-border pt-6">
+        <Link
+          href={`/levels/${tutorial.maturity_level}`}
+          className="text-sm text-bc-primary hover:underline"
+        >
+          &larr; All L{tutorial.maturity_level} tutorials
+        </Link>
+        <Link
+          href="/browse"
+          className="text-sm text-bc-primary hover:underline"
+        >
+          Browse all &rarr;
+        </Link>
+      </nav>
     </article>
   );
 }

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServerClient } from "@/lib/supabase";
 import { detectSourceType } from "@/lib/extract";
+
+/** Force dynamic — these routes need runtime env vars */
+export const dynamic = "force-dynamic";
 
 /**
  * POST /api/ingest
@@ -37,6 +39,7 @@ export async function POST(request: NextRequest) {
   const sourceType = detectSourceType(url);
 
   // Store the submission
+  const { createServerClient } = await import("@/lib/supabase");
   const supabase = createServerClient();
   const { error } = await supabase.from("submissions").insert({
     phone_number: from,

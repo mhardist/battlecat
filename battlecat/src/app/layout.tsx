@@ -1,12 +1,7 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import Link from "next/link";
+import { DarkModeToggle } from "@/components/DarkModeToggle";
 import "./globals.css";
-
-const inter = Inter({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
   title: "Battle Cat AI — Level Up Your AI Skills",
@@ -22,12 +17,11 @@ export const metadata: Metadata = {
 
 const NAV_LINKS = [
   { href: "/", label: "Home" },
-  { href: "/levels/0", label: "L0" },
-  { href: "/levels/1", label: "L1" },
-  { href: "/levels/2", label: "L2" },
-  { href: "/levels/3", label: "L3" },
-  { href: "/levels/4", label: "L4" },
+  { href: "/browse", label: "Browse" },
+  { href: "/paths", label: "Paths" },
+  { href: "/level-up", label: "Level Up" },
   { href: "/search", label: "Search" },
+  { href: "/submit", label: "Submit" },
 ];
 
 export default function RootLayout({
@@ -36,8 +30,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={`${inter.variable} antialiased`}>
+    <html lang="en" suppressHydrationWarning>
+      <body className="antialiased">
         <nav className="sticky top-0 z-50 border-b border-bc-border bg-bc-surface/80 backdrop-blur-md">
           <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
             <Link
@@ -59,6 +53,7 @@ export default function RootLayout({
                   {link.label}
                 </Link>
               ))}
+              <DarkModeToggle />
             </div>
           </div>
         </nav>

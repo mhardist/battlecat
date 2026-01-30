@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServerClient } from "@/lib/supabase";
 import { extractContent } from "@/lib/extract";
 import { generateTutorial, mergeTutorial } from "@/lib/ai";
+
+/** Force dynamic — these routes need runtime env vars */
+export const dynamic = "force-dynamic";
 
 /**
  * POST /api/process
@@ -18,6 +20,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Missing submission_id" }, { status: 400 });
   }
 
+  const { createServerClient } = await import("@/lib/supabase");
   const supabase = createServerClient();
 
   // 1. Fetch the submission
