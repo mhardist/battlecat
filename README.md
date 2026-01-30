@@ -1,30 +1,40 @@
-# AI Learning Organizer
+# Battle Cat AI
 
-Forward TikToks, articles, and links from your iPhone. Get organized, step-by-step AI learning tutorials on a shareable blog.
+**battlecat.ai** — Text a link from your iPhone, get organized AI learning tutorials on a shareable blog, mapped to the AI Maturity Framework (L0–L4).
 
-## Status: Planning Phase
+## Status: Planning Complete — Ready to Build
 
-See [PLANNING.md](./PLANNING.md) for the full planning document with questions to answer before building.
+See [PLANNING.md](./PLANNING.md) for the full plan including:
+- All decisions locked in
+- AI Maturity Framework (Levels 0–4) integrated as the content backbone
+- Recommended tech stack (Cloudflare + Supabase + Next.js + Twilio + Claude API)
+- Full architecture diagram
+- 6-phase execution plan
+- Branding requirements for the Battle Cat identity
 
-## How It Will Work
+## How It Works
 
-1. **Share a link** from your iPhone (via text, iOS Shortcut, or email)
-2. **Content is extracted** automatically (video transcripts, article text, etc.)
-3. **AI processes it** into a structured, step-by-step tutorial
-4. **Published** to your personal evergreen blog site you can share with friends
+1. **Text a link** from your iPhone to a dedicated Twilio number
+2. **Content is extracted** (TikTok audio transcription, article text, tweets, etc.)
+3. **AI classifies it** by Maturity Level (L0 Asker → L4 Architect)
+4. **Merges with existing content** on the same topic (links become references, content is king)
+5. **Published** as a step-by-step tutorial on battlecat.ai
 
-## Project Structure (Planned)
+## The Framework
 
-```
-├── PLANNING.md          # Planning doc — start here
-├── ingestion/           # Receives links from your phone
-├── extraction/          # Pulls content from URLs (articles, videos, etc.)
-├── processing/          # AI pipeline to categorize & structure tutorials
-├── website/             # Evergreen blog frontend
-└── shared/              # Types, utilities, config
-```
+| Level | You | AI | Relationship |
+|-------|-----|-----|-------------|
+| 0 | Asker | Answerer | Transactional |
+| 1 | Instructor | Assistant | Retained |
+| 2 | Designer | Builder | Collaborative |
+| 3 | Supervisor | Agent | Delegated |
+| 4 | Architect | Organization | Orchestrated |
 
-## Getting Started
+## Next Step
 
-1. Read `PLANNING.md` and answer the questions
-2. Tech stack and detailed implementation will follow from your answers
+Create the `battlecat` repo and start building Phase 0.
+
+## Reference Materials
+
+- `blue-preso-slides.pdf` — AI Maturity Framework presentation (Entrepreneurs Sandbox, Jan 2026)
+- `BlowUpYourArchitecture-compressed (1).pdf` — Architecture & agentic engineering patterns
