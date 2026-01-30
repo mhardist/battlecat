@@ -147,12 +147,12 @@ The system should also tag content with:
 - **Future inputs:** iOS Shortcut, email (Cloudflare Email Workers), web form on battlecat.ai
 
 ### Content Extraction
-- **Articles / blogs:** Jina Reader API or Firecrawl (readable text extraction)
-- **TikTok:** yt-dlp to download audio → OpenAI Whisper API for transcription
-- **YouTube:** yt-dlp for transcript or YouTube transcript API
-- **Twitter/X:** Tweet extraction via API or scraping service
-- **LinkedIn:** Scrape or manual paste (LinkedIn blocks most automated access)
-- **PDFs:** pdf-parse or Unstructured.io
+- **Articles / blogs:** Jina Reader API (with optional API key for higher rate limits)
+- **TikTok:** yt-dlp to extract audio stream URL → Deepgram Nova-3 for transcription (spoken words only)
+- **YouTube:** yt-dlp subtitles (VTT auto-generated/manual) → Deepgram audio fallback → Jina Reader last resort
+- **Twitter/X:** Jina Reader with fxtwitter proxy fallback (optional Twitter API v2 bearer token)
+- **LinkedIn:** Jina Reader for public articles/posts, Google cache fallback for /pulse/ articles, manual paste workaround for blocked content
+- **PDFs:** pdf-parse v2 (text + metadata extraction)
 
 ### AI Processing
 - **Primary LLM:** Anthropic Claude API (Sonnet for speed, Opus for complex synthesis)
@@ -197,7 +197,7 @@ The system should also tag content with:
 │          EXTRACTION ENGINE (Cloudflare Worker)            │
 │                                                           │
 │  • Articles: Jina Reader / Firecrawl                     │
-│  • TikTok: yt-dlp + Whisper (spoken words)               │
+│  • TikTok: yt-dlp + Deepgram Nova-3 (spoken words)       │
 │  • YouTube: yt-dlp transcript                            │
 │  • Twitter: Tweet/thread extraction                      │
 │  • PDFs: pdf-parse                                       │
@@ -260,137 +260,54 @@ The system should also tag content with:
 
 ### Phase 0: Foundation & Branding
 
-**Task 0.1: Create the `battlecat` repo**
-- New GitHub repo: `mhardist/battlecat`
-- Initialize with Next.js 14+, Tailwind CSS, TypeScript
-- Set up Cloudflare Pages deployment
-- Configure Supabase project
-
-**Task 0.2: Brand Identity for Battle Cat**
-- This is a from-scratch brand inspired by He-Man's Battle Cat (80s cartoon)
-- Deliverables needed:
-  - Logo (primary + icon)
-  - Color palette
-  - Typography selection
-  - Brand voice / tone guide
-  - Favicon + social share images (OG tags)
-  - Loading/empty state illustrations
-- **Approach:** Use AI agents skilled in brand design to generate options:
-  - Use an image generation model (Midjourney, DALL-E, or Ideogram) for logo concepts
-  - Use Claude to define brand voice, color theory, typography pairing
-  - Use a design tool (Figma, or Lovable for rapid iteration) to assemble brand kit
-  - Iterate until the brand feels right — 80s energy, modern polish
-
-**Task 0.3: Point domain**
-- Transfer DNS to Cloudflare (or point GoDaddy nameservers to Cloudflare)
-- Set up battlecat.ai on Cloudflare Pages
+- [x] **Task 0.1: Create the `battlecat` project** — Next.js 16, TypeScript, Tailwind CSS v4
+- [ ] **Task 0.2: Brand identity** — Color palette and tokens done. Logo, favicon, OG image need design agent (Midjourney/DALL-E/Ideogram). Brief is below.
+- [ ] **Task 0.3: Point domain** — GoDaddy nameservers → Cloudflare. Cloudflare Pages deployment.
 
 ### Phase 1: Ingestion (Text a Link)
 
-**Task 1.1: Twilio setup**
-- Purchase a phone number
-- Configure SMS webhook → Cloudflare Worker endpoint
-
-**Task 1.2: Ingestion Worker**
-- Parse incoming SMS for URLs
-- Detect source type from URL patterns
-- Store raw submission in Supabase
-- Queue for extraction
-- Reply with confirmation SMS ("Got it — processing your link")
+- [ ] **Task 1.1: Twilio setup** — Purchase phone number, configure SMS webhook → `/api/ingest`
+- [x] **Task 1.2: Ingestion worker** — `POST /api/ingest` parses SMS for URLs, detects source type, stores in Supabase, returns TwiML confirmation
+- [x] **Task 1.3: Web form** (pulled from Phase 6) — `POST /api/submit` + `/submit` page for pasting links from a browser
 
 ### Phase 2: Content Extraction
 
-**Task 2.1: Article extractor**
-- Jina Reader API integration for articles/blogs
-- Fallback to Firecrawl if Jina fails
-
-**Task 2.2: TikTok extractor**
-- yt-dlp to download audio track
-- Whisper API for transcription (spoken words only)
-
-**Task 2.3: Tweet extractor**
-- Twitter/X API or scraping service for tweets + threads
-
-**Task 2.4: Secondary extractors (YouTube, PDF, LinkedIn)**
-- YouTube: yt-dlp transcript extraction
-- PDF: pdf-parse for text extraction
-- LinkedIn: best-effort scrape with manual fallback
+- [x] **Task 2.1: Article extractor** — Jina Reader API with optional API key auth
+- [x] **Task 2.2: TikTok extractor** — yt-dlp extracts audio stream URL → Deepgram Nova-3 transcribes spoken words
+- [x] **Task 2.3: Tweet extractor** — Jina Reader first, fxtwitter.com proxy fallback. Normalizes x.com URLs.
+- [x] **Task 2.4a: YouTube extractor** — Three strategies: yt-dlp subtitles (VTT → plain text parser) → Deepgram audio transcription → Jina Reader page content
+- [x] **Task 2.4b: PDF extractor** — pdf-parse v2 (PDFParse class) — downloads PDF, extracts text + metadata (title, author, pages)
+- [x] **Task 2.4c: LinkedIn extractor** — Jina Reader for public articles, Google cache fallback for /pulse/ articles. Clear error with paste-as-note workaround.
 
 ### Phase 3: AI Processing Pipeline
 
-**Task 3.1: Level classifier**
-- Claude API prompt that classifies content into L0–L4 based on:
-  - Tools/platforms mentioned
-  - Complexity of concepts
-  - User role implied (asker, instructor, designer, supervisor, architect)
-  - Actionability (watching vs. building vs. orchestrating)
-
-**Task 3.2: Tutorial generator**
-- Claude API prompt that transforms raw extracted text into:
-  - Title
-  - Summary (2-3 sentences)
-  - Maturity level(s)
-  - Topics / tags
-  - Step-by-step tutorial body
-  - "Try this" action items
-  - Tools referenced
-  - Difficulty rating
-  - Prerequisites (links to other tutorials)
-
-**Task 3.3: Content merger**
-- When new content arrives, check existing tutorials for topic overlap
-- If match found: Claude synthesizes old + new into an updated, richer tutorial
-- Original source links preserved as references
-- Merge history tracked
-
-**Task 3.4: Level-up tagger**
-- Classify each tutorial as:
-  - **Level-up:** Teaches you to move from L(n) to L(n+1)
-  - **Level-practice:** Deepens skill at current level
-  - **Cross-level:** Spans multiple levels
+- [x] **Task 3.1: Level classifier** — Claude Sonnet prompt with full framework definition, classifies to L0–L4
+- [x] **Task 3.2: Tutorial generator** — Two-step: classify then generate (title, summary, body, action items, topics, tags, tools, difficulty)
+- [x] **Task 3.3: Content merger** — Detects topic overlap at same level, Claude synthesizes into richer tutorial, preserves source URLs as references
+- [x] **Task 3.4: Level-up tagger** — Tags as level-up, level-practice, or cross-level
 
 ### Phase 4: The Website
 
-**Task 4.1: Core pages**
-- Home page (featured + latest)
-- Tutorial detail page
-- Level pages (L0, L1, L2, L3, L4)
-- Level-up view ("You're here → here's what to learn next")
-- Topic pages
-- Learning path view
-- Search
-
-**Task 4.2: Features**
-- Bookmarks / favorites (Supabase + local storage for anonymous users)
-- Share via link (OG meta tags for social previews)
-- Filter by level + topic + tag
-- Progress tracking
-- Notes / comments (Supabase real-time)
-- Dark mode (Tailwind dark variant)
-
-**Task 4.3: Polish**
-- Apply Battle Cat brand identity throughout
-- Mobile-first responsive design
-- Loading states, empty states, error states
-- SEO meta tags (for when it goes public)
-- RSS feed
+- [x] **Task 4.1: Core pages** — Home (hero, framework cards, latest tutorials, stats), Tutorial detail, Level pages (L0–L4), Level-up view, Learning paths (L0→L4 timeline), Browse/filter, Search, Submit, Bookmarks
+- [x] **Task 4.2: Features** — Bookmarks (localStorage), Share (Web Share API + clipboard), Filters (level, relation, difficulty, topic), Progress tracking (completion + notes), Dark mode (class toggle + localStorage)
+- [x] **Task 4.3: Polish** — Mobile hamburger nav, custom 404, OG meta tags on layout, empty states on all pages
+- [ ] **Task 4.3: Remaining polish** — Per-page SEO titles, RSS feed, loading skeleton states
 
 ### Phase 5: End-to-End Integration
 
-- Text a TikTok link from iPhone
-- See it arrive as a processed, level-tagged tutorial on battlecat.ai
-- Verify merge behavior with duplicate topics
-- Verify level classification accuracy
-- Tune prompts based on real results
+- [ ] Text a TikTok link from iPhone → see it arrive as a tutorial on battlecat.ai
+- [ ] Verify merge behavior with duplicate topics
+- [ ] Verify level classification accuracy
+- [ ] Tune prompts based on real results
 
 ### Phase 6: Expansion
 
-- Add iOS Shortcut as second ingestion method
-- Email ingestion (Cloudflare Email Workers)
-- Web form on battlecat.ai ("Paste a link")
-- Newsletter / email digest (weekly)
-- Make site public — SEO, social sharing, open access
-- Admin dashboard for content moderation
+- [x] Web form on battlecat.ai ("Paste a link") — pulled forward
+- [ ] iOS Shortcut as second ingestion method
+- [ ] Email ingestion (Cloudflare Email Workers)
+- [ ] Newsletter / email digest (weekly)
+- [ ] Make site public — SEO, social sharing, open access
+- [ ] Admin dashboard for content moderation
 
 ---
 
@@ -462,6 +379,93 @@ Prompt direction for generating the abstract Battle Cat mark:
 
 ---
 
-## All Questions Answered — Ready to Build
+## Implementation Status
 
-The planning phase is complete. Every decision is locked in. Next step: create the `battlecat` repo and start Phase 0 (foundation, branding, domain setup).
+Updated: January 2026
+
+### Phase 0: Foundation & Branding
+
+| Task | Status | Notes |
+|------|--------|-------|
+| 0.1 Create battlecat project | **Done** | Next.js 16, TypeScript, Tailwind CSS v4 |
+| 0.2 Brand identity | **Partial** | Color palette + tokens implemented. Logo, favicon, OG image still needed (design agent / Midjourney). |
+| 0.3 Point domain | **Pending** | Requires: GoDaddy nameservers → Cloudflare, Cloudflare Pages deployment |
+
+### Phase 1: Ingestion
+
+| Task | Status | Notes |
+|------|--------|-------|
+| 1.1 Twilio setup | **Pending** | Requires: purchase phone number, configure SMS webhook |
+| 1.2 Ingestion worker | **Done** | `POST /api/ingest` — parses SMS, detects source type, stores submission |
+| Web form (Phase 6 pull-forward) | **Done** | `POST /api/submit` + `/submit` page — paste links from browser |
+
+### Phase 2: Content Extraction
+
+| Task | Status | Notes |
+|------|--------|-------|
+| 2.1 Article extractor | **Done** | Jina Reader with optional API key auth |
+| 2.2 TikTok extractor | **Done** | yt-dlp audio stream → Deepgram Nova-3 transcription |
+| 2.3 Tweet extractor | **Done** | Jina Reader → fxtwitter fallback |
+| 2.4a YouTube extractor | **Done** | yt-dlp subtitles (VTT parser) → Deepgram audio → Jina Reader |
+| 2.4b PDF extractor | **Done** | pdf-parse v2 (text + metadata) |
+| 2.4c LinkedIn extractor | **Done** | Jina Reader for public articles, Google cache fallback |
+
+### Phase 3: AI Processing Pipeline
+
+| Task | Status | Notes |
+|------|--------|-------|
+| 3.1 Level classifier | **Done** | Claude Sonnet — classifies L0–L4 with full framework prompt |
+| 3.2 Tutorial generator | **Done** | Two-step: classify → generate (title, summary, body, action items, tags) |
+| 3.3 Content merger | **Done** | Detects topic overlap at same level, synthesizes into richer tutorial |
+| 3.4 Level-up tagger | **Done** | Tags as level-up, level-practice, or cross-level |
+
+### Phase 4: The Website
+
+| Task | Status | Notes |
+|------|--------|-------|
+| 4.1 Home page | **Done** | Hero, framework cards, latest tutorials, user distribution chart |
+| 4.1 Tutorial detail | **Done** | Full layout with actions (bookmark, complete, share, notes) |
+| 4.1 Level pages (L0–L4) | **Done** | Level info, transitions, level-up tutorials, all tutorials |
+| 4.1 Level-up view | **Done** | Interactive level selector, transition costs, The Technical Cliff / The Gate |
+| 4.1 Learning paths | **Done** | Visual L0→L4 timeline with tutorials at each node |
+| 4.1 Browse / filter | **Done** | Level, relation, difficulty, topic multi-filter |
+| 4.1 Search | **Done** | Text search across titles, summaries, topics, tags, tools |
+| 4.2 Bookmarks | **Done** | localStorage-backed, dedicated /bookmarks page |
+| 4.2 Share | **Done** | Web Share API + clipboard fallback, per-tutorial |
+| 4.2 Filters | **Done** | Level, relation, difficulty, topic |
+| 4.2 Progress tracking | **Done** | localStorage-backed completion + personal notes |
+| 4.2 Dark mode | **Done** | Class-based toggle with localStorage persistence |
+| 4.3 Mobile responsive | **Done** | Hamburger menu, full-screen overlay, route-aware |
+| 4.3 Custom 404 | **Done** | Branded not-found page |
+| 4.3 SEO meta tags | **Partial** | OG tags on layout, per-page titles pending |
+| 4.3 RSS feed | **Pending** | |
+
+### Phase 5: End-to-End Integration
+
+| Task | Status | Notes |
+|------|--------|-------|
+| Live SMS → tutorial pipeline | **Pending** | Requires: Supabase project + Twilio phone number |
+| Merge behavior testing | **Pending** | Requires live pipeline |
+| Prompt tuning | **Pending** | Requires live pipeline |
+
+### Phase 6: Expansion
+
+| Task | Status | Notes |
+|------|--------|-------|
+| Web form ingestion | **Done** | Pulled forward — /submit page + /api/submit endpoint |
+| iOS Shortcut | **Pending** | |
+| Email ingestion | **Pending** | |
+| Newsletter / digest | **Pending** | |
+| Make site public | **Pending** | |
+| Admin dashboard | **Pending** | |
+
+### What Requires Manual Setup
+
+These tasks cannot be automated and require account access:
+
+1. **Supabase** — Create project at supabase.com → run `battlecat/src/db/schema.sql` → copy keys to `.env.local`
+2. **Deepgram** — Sign up at deepgram.com → copy API key → `DEEPGRAM_API_KEY`
+3. **Twilio** — Purchase phone number → configure SMS webhook to `https://battlecat.ai/api/ingest`
+4. **Domain** — GoDaddy: change nameservers to Cloudflare → Cloudflare: add battlecat.ai → Cloudflare Pages deployment
+5. **yt-dlp** — Install on deployment server (`pip install yt-dlp`) for TikTok/YouTube audio extraction
+6. **Logo / visual assets** — Use Midjourney, DALL-E, or designer with the brand brief above

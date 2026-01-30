@@ -5,8 +5,21 @@
 ## Architecture
 
 ```
-iPhone SMS → Twilio → /api/ingest → Extract → Claude AI → Supabase → Next.js Website
-Web Form  → /api/submit ──────────────────────────────────────────────┘
+iPhone SMS → Twilio → /api/ingest ─┐
+Web Form  → /api/submit ───────────┤
+                                    ▼
+                              Extract Content
+                          (Jina / yt-dlp / Deepgram)
+                                    │
+                                    ▼
+                            Claude AI Processing
+                       (classify, generate, merge)
+                                    │
+                                    ▼
+                               Supabase DB
+                                    │
+                                    ▼
+                          Next.js Website (SSG)
 ```
 
 ## Project Structure
@@ -55,44 +68,72 @@ src/
     └── index.ts                 # TypeScript type definitions
 ```
 
+## Content Extractors
+
+All six source-type extractors are implemented in `src/lib/extract.ts`:
+
+| Source | Strategy | Fallback |
+|--------|----------|----------|
+| **Article** | Jina Reader (`r.jina.ai`) | — |
+| **TikTok** | yt-dlp audio stream → Deepgram Nova-3 | — |
+| **Tweet** | Jina Reader | fxtwitter.com proxy |
+| **YouTube** | yt-dlp subtitles (VTT) | Deepgram audio transcription → Jina Reader |
+| **PDF** | pdf-parse v2 (`PDFParse` class) | — |
+| **LinkedIn** | Jina Reader | Google cache (articles only) |
+
+Source type is auto-detected from the URL hostname/path.
+
 ## Features
 
-### Must-Have (Built)
+### Website (Built)
 - Search across all content with level filtering
 - Filter by level, topic, tag, relation, difficulty
 - Learning path view (L0→L4 timeline)
 - Bookmark/favorite tutorials (localStorage)
-- Share individual tutorials via link
+- Share individual tutorials via Web Share API
 - Level-up view showing what to learn next
-- Dark mode toggle
-
-### Should-Have (Built)
+- Dark mode toggle with system preference detection
 - Personal notes on any tutorial
 - Progress tracking (mark tutorials complete)
-- Mobile-responsive navigation
+- Mobile-responsive navigation (hamburger menu)
+- Custom 404 page
 
-### Coming Soon
-- Supabase backend integration
-- Twilio phone number + live SMS ingestion
-- TikTok audio transcription (Whisper)
-- Tweet/YouTube/PDF/LinkedIn extractors
-- Email digest/newsletter
-- Admin dashboard
+### Backend (Built)
+- All 6 content extractors (article, TikTok, tweet, YouTube, PDF, LinkedIn)
+- Claude AI integration (level classifier, tutorial generator, content merger)
+- Twilio SMS webhook endpoint (`/api/ingest`)
+- Web form submission endpoint (`/api/submit`)
+- Processing pipeline (`/api/process`)
+- Supabase database schema with full-text search
+
+### Requires Manual Setup
+- Supabase project provisioning + schema deployment
+- Twilio phone number purchase + webhook configuration
+- Deepgram account + API key (for TikTok/YouTube audio)
+- DNS pointing battlecat.ai → Cloudflare Pages
+- yt-dlp installation on server (for TikTok/YouTube extraction)
 
 ## Setup
 
-1. Copy `.env.example` to `.env.local` and fill in your keys
+1. Copy `.env.example` to `.env.local` and fill in your keys:
+   - `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` / `SUPABASE_SERVICE_ROLE_KEY`
+   - `ANTHROPIC_API_KEY`
+   - `DEEPGRAM_API_KEY` (TikTok + YouTube audio transcription)
+   - `TWILIO_ACCOUNT_SID` / `TWILIO_AUTH_TOKEN` / `TWILIO_PHONE_NUMBER`
+   - `JINA_API_KEY` (optional, improves rate limits for article extraction)
 2. Run the Supabase schema: `src/db/schema.sql`
-3. Configure Twilio webhook to point to `/api/ingest`
-4. `npm install && npm run dev`
+3. Install yt-dlp on the server for TikTok/YouTube extraction
+4. Configure Twilio webhook to point to `https://battlecat.ai/api/ingest`
+5. `npm install && npm run dev`
 
 ## Tech Stack
 
 - **Framework:** Next.js 16 (App Router, Turbopack)
 - **Language:** TypeScript
 - **Database:** Supabase (Postgres + FTS)
-- **AI:** Anthropic Claude API
+- **AI:** Anthropic Claude API (Sonnet)
 - **SMS:** Twilio
-- **Extraction:** Jina Reader (articles), Whisper (TikTok audio)
+- **Audio Transcription:** Deepgram Nova-3
+- **Extraction:** Jina Reader (articles), yt-dlp (video/audio streams), pdf-parse v2 (PDFs)
 - **Styling:** Tailwind CSS v4
 - **Deployment:** Cloudflare Pages
