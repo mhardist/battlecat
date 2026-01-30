@@ -394,15 +394,74 @@ The system should also tag content with:
 
 ---
 
-## Remaining Questions
+## Brand Brief: Battle Cat AI
 
-Before building begins, one question remains:
+All branding decisions are locked in. This brief can be handed directly to a design agent.
 
-**For the Battle Cat brand — do you have any specific visual direction in mind?**
-- Color palette preferences? (80s neon? Dark/moody like your deck? Warm gold tones?)
-- Should the logo literally feature a battle cat / tiger, or is it more abstract?
-- Any brands or sites whose visual identity you admire?
+### Brand Origin
+Battle Cat is the armored tiger from the 1980s He-Man cartoon — fierce, loyal, a force multiplier. The brand channels that energy into AI learning: this tool makes you more powerful.
+
+### Design Direction
+
+| Attribute | Decision |
+|-----------|----------|
+| **Vibe** | Clean, modern, approachable. Not retro — but with subtle 80s accents that reward those who get the reference |
+| **Design system** | Material Design principles — elevation, motion, clear hierarchy, accessible components |
+| **Logo** | Abstract mark that evokes Battle Cat / Cringer without being a literal cartoon tiger. Think: stylized silhouette, geometric abstraction, or a mark that suggests feline power + intelligence. Should work at favicon size and full bleed |
+| **Palette** | Agent's recommendation (see below) |
+| **Typography** | Clean sans-serif for body (Inter, Plus Jakarta Sans, or similar). A slightly bolder/display weight for headings that carries personality without being loud |
+| **Tone** | Tasteful but not unapproachable. Confident but not elitist. The site should feel like a smart friend sharing notes, not a lecture hall |
+
+### Recommended Color Palette
+
+Built around Material Design with subtle warmth and a nod to Battle Cat's green/gold:
+
+| Role | Color | Hex | Usage |
+|------|-------|-----|-------|
+| **Primary** | Forest Teal | `#1B7A6E` | Navigation, primary buttons, active states — evokes Battle Cat's armored green |
+| **Primary Dark** | Deep Teal | `#0F4F47` | Headers, dark surfaces, hover states |
+| **Secondary** | Amber Gold | `#D4960A` | Accents, highlights, CTAs, level-up indicators — the 80s warmth, Battle Cat's eyes |
+| **Background** | Off-White | `#FAFAF8` | Page background, clean and breathable |
+| **Surface** | Warm White | `#FFFFFF` | Cards, elevated content panels |
+| **Text Primary** | Charcoal | `#1C1C1E` | Body text, headings |
+| **Text Secondary** | Slate | `#6B7280` | Captions, metadata, secondary info |
+| **Border/Divider** | Light Gray | `#E5E7EB` | Subtle separation |
+| **Success** | Emerald | `#10B981` | Completed tutorials, progress |
+| **Dark Mode BG** | Near Black | `#111113` | Dark mode background |
+| **Dark Mode Surface** | Dark Gray | `#1E1E22` | Dark mode cards |
+
+### Level Colors (for the Framework)
+
+Each maturity level gets its own accent color, used in badges, borders, and the Level-Up view:
+
+| Level | Color | Hex | Rationale |
+|-------|-------|-----|-----------|
+| L0 | Cool Gray | `#9CA3AF` | Neutral starting point |
+| L1 | Teal | `#14B8A6` | Engagement beginning |
+| L2 | Green | `#22C55E` | Creative energy, building |
+| L3 | Amber | `#F59E0B` | Warm, trusted, autonomous |
+| L4 | Gold | `#D4960A` | Mastery, Battle Cat's power |
+
+### Logo Concepts (For Design Agent)
+
+Prompt direction for generating the abstract Battle Cat mark:
+
+> "Abstract geometric logo mark for 'Battle Cat AI'. Inspired by a powerful armored tiger but NOT a literal tiger illustration. Think: angular geometric shapes suggesting a feline profile or silhouette, clean lines, modern minimalism. Could reference cat ears, a shield shape, or forward motion. Works in single color. Suitable for favicon at 32px. Material Design aesthetic. Colors: forest teal (#1B7A6E) and amber gold (#D4960A). No text in the mark."
+
+### Brand Deliverables Checklist
+
+- [ ] Logo mark (SVG, PNG at multiple sizes)
+- [ ] Logo + wordmark lockup
+- [ ] Favicon (16px, 32px, 192px, 512px)
+- [ ] OG share image (1200x630)
+- [ ] Color palette tokens (CSS custom properties + Tailwind config)
+- [ ] Typography scale (headings, body, captions, code)
+- [ ] Component styling guide (cards, badges, buttons, level indicators)
+- [ ] Dark mode variant
+- [ ] Loading / empty state illustrations (optional, Phase 4)
 
 ---
 
-*Once you answer the branding question, we start building in the `battlecat` repo.*
+## All Questions Answered — Ready to Build
+
+The planning phase is complete. Every decision is locked in. Next step: create the `battlecat` repo and start Phase 0 (foundation, branding, domain setup).
