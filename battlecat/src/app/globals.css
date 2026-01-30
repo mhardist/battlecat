@@ -1,0 +1,85 @@
+@import "tailwindcss";
+
+:root {
+  --bc-primary: #1B7A6E;
+  --bc-primary-dark: #0F4F47;
+  --bc-primary-light: #2A9D8F;
+  --bc-secondary: #D4960A;
+  --bc-secondary-light: #E8B54D;
+  --bc-bg: #FAFAF8;
+  --bc-surface: #FFFFFF;
+  --bc-text: #1C1C1E;
+  --bc-text-secondary: #6B7280;
+  --bc-border: #E5E7EB;
+  --bc-success: #10B981;
+  --bc-level-0: #9CA3AF;
+  --bc-level-1: #14B8A6;
+  --bc-level-2: #22C55E;
+  --bc-level-3: #F59E0B;
+  --bc-level-4: #D4960A;
+
+  --background: var(--bc-bg);
+  --foreground: var(--bc-text);
+}
+
+/* Dark mode via class (toggled by DarkModeToggle) */
+.dark {
+  --bc-bg: #111113;
+  --bc-surface: #1E1E22;
+  --bc-text: #F5F5F5;
+  --bc-text-secondary: #9CA3AF;
+  --bc-border: #2E2E33;
+  --background: #111113;
+  --foreground: #F5F5F5;
+}
+
+/* Also respect OS preference when no explicit toggle */
+@media (prefers-color-scheme: dark) {
+  :root:not(.dark):not(:has(html.dark)) {
+    --background: #111113;
+    --foreground: #F5F5F5;
+    --bc-bg: #111113;
+    --bc-surface: #1E1E22;
+    --bc-text: #F5F5F5;
+    --bc-text-secondary: #9CA3AF;
+    --bc-border: #2E2E33;
+  }
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-bc-primary: var(--bc-primary);
+  --color-bc-primary-dark: var(--bc-primary-dark);
+  --color-bc-primary-light: var(--bc-primary-light);
+  --color-bc-secondary: var(--bc-secondary);
+  --color-bc-secondary-light: var(--bc-secondary-light);
+  --color-bc-surface: var(--bc-surface);
+  --color-bc-border: var(--bc-border);
+  --color-bc-text-secondary: var(--bc-text-secondary);
+  --color-bc-success: var(--bc-success);
+  --color-bc-level-0: var(--bc-level-0);
+  --color-bc-level-1: var(--bc-level-1);
+  --color-bc-level-2: var(--bc-level-2);
+  --color-bc-level-3: var(--bc-level-3);
+  --color-bc-level-4: var(--bc-level-4);
+  --font-sans: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+/* Prose dark mode for tutorial bodies */
+.dark .prose {
+  --tw-prose-body: #D1D5DB;
+  --tw-prose-headings: #F5F5F5;
+  --tw-prose-bold: #F5F5F5;
+  --tw-prose-links: #2A9D8F;
+  --tw-prose-bullets: #6B7280;
+  --tw-prose-counters: #6B7280;
+  --tw-prose-hr: #2E2E33;
+}

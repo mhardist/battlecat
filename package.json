@@ -1,0 +1,9 @@
+{
+  "name": "ai-learning-organizer",
+  "version": "0.1.0",
+  "description": "Forward links from your phone, get organized AI learning tutorials on an evergreen blog",
+  "private": true,
+  "scripts": {
+    "dev": "echo 'Stack not yet selected — answer the questions in PLANNING.md first'"
+  }
+}
