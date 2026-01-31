@@ -42,6 +42,9 @@ You text a link from your iPhone via WhatsApp. The system extracts, processes, c
 - Dark mode with system preference detection
 - Progress tracking (completion + notes)
 - Mobile-responsive navigation
+- Hot News homepage section (3 items, expandable to 8)
+- Collapsible tools timeline with 28 tools, 100+ milestones, significance-based display
+- Research agent API for automated tool discovery
 
 ### Should-Have Features
 - [x] Comments or notes on any post
@@ -294,6 +297,9 @@ The system also tags content with:
 │  • Orko 0–5 tutorial ratings                             │
 │  • Moss Man stale/outdated article markers               │
 │  • Sorceress celebration modal on achievement unlock     │
+│  • Hot News section (3 items, expandable to 8)           │
+│  • Collapsible tools timeline (28 tools, 100+ events)    │
+│  • Research agent API for automated tool discovery       │
 └──────────────────────────────────────────────────────────┘
 ```
 
@@ -355,8 +361,11 @@ Characters from He-Man and the Masters of the Universe serve as UI metaphors thr
 - [x] **Task 4.2: Features** — Bookmarks (localStorage), Share (Web Share API + clipboard), Filters (level, relation, difficulty, topic), Progress tracking (completion + notes), Dark mode (class toggle + localStorage), Orko ratings (0–5), Moss Man stale markers (database-backed), Achievement system (20 achievements, 5 power tiers, Sorceress modal)
 - [x] **Task 4.3: Polish** — Mobile hamburger nav, custom 404, per-page SEO metadata, RSS feed (/feed.xml), loading skeletons, OG meta tags
 - [x] **Task 4.4: Interactive quiz** — 6-question wizard with animated transitions, localStorage persistence, level-specific tutorial recommendations
-- [x] **Task 4.5: Tools directory** — AI tools database with launch dates, timeline view, per-level cards, tutorial counts
+- [x] **Task 4.5: Tools directory** — 28 AI tools database with launch dates, collapsible timeline view, per-level cards, tutorial counts, significance ratings
 - [x] **Task 4.6: He-Man theme system** — Orko ratings, Moss Man stale markers, Sorceress achievement modal
+- [x] **Task 4.7: Hot News homepage section** — 3 curated articles with teasers (expandable to 8), config-driven via `config/hot-news.ts`
+- [x] **Task 4.8: Collapsible tools timeline** — Time-bucketed (This Month, Last 3/6/12 Months, Older), reverse chronological, significance-based filtering, level filter pills, search
+- [x] **Task 4.9: Research agent API** — `GET /api/research-tools?since=YYYY-MM` uses Claude to discover new AI tool releases for future daily cron
 
 ### Phase 5: End-to-End Integration
 

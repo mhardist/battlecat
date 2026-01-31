@@ -52,6 +52,11 @@ Phase 1: Miki (sole user, private). Phase 2: Public — anyone learning to use A
 - **As a content system, every tutorial is tagged** with level-up (teaches transition to next level), level-practice (deepens current level skills), or cross-level (spans multiple levels).
 - **As a content manager, I can mark tutorials as stale/outdated** by clicking the Moss Man badge, which persists to the Supabase database via API.
 
+### Discovery
+- **As a reader, I can see the latest AI news** on the homepage in a "Hot in AI" section showing the 3 most impactful recent releases, expandable to 8.
+- **As a reader, I can browse a collapsible tools timeline** showing AI tool releases and milestones in reverse chronological order, grouped by time period (This Month, Last 3 Months, Last 6 Months, etc.), with significance-based filtering and level filter pills.
+- **As a system, the research agent API can discover new AI tool releases** via Claude-powered web analysis, returning structured data for future automated daily updates.
+
 ---
 
 ## 3. The AI Maturity Framework
@@ -145,12 +150,15 @@ The framework is the organizing backbone of all content on the platform.
 | WEB-18 | Mark tutorials as complete (localStorage) | Done |
 | WEB-19 | Add personal notes to tutorials (localStorage) | Done |
 | WEB-20 | New tutorials visible on site within 60 seconds (ISR) | Done |
-| WEB-21 | AI tools directory (`/tools`) — timeline view, per-level tool cards, tutorial counts | Done |
-| WEB-22 | Tool badges — inline SVG icons for 14 AI tools on cards and detail pages | Done |
+| WEB-21 | AI tools directory (`/tools`) — collapsible timeline, per-level tool cards, tutorial counts | Done |
+| WEB-22 | Tool badges — inline SVG icons for 28 AI tools on cards and detail pages | Done |
 | WEB-23 | Orko rating system — 0–5 character ratings on tutorials (localStorage) | Done |
 | WEB-24 | Moss Man stale markers — click-to-toggle outdated indicator, database-backed via API | Done |
 | WEB-25 | Achievement/reward system — 20 He-Man themed achievements, Points of Power, 5 power tiers, Sorceress celebration modal | Done |
 | WEB-26 | Achievements page (`/achievements`) — progress gallery, tier display, category groups | Done |
+| WEB-27 | Hot News homepage section — 3 curated articles with teasers, expandable to 8 | Done |
+| WEB-28 | Collapsible tools timeline — time-bucketed (This Month, Last 3/6/12 Months, Older), significance-based filtering, level filter pills, search | Done |
+| WEB-29 | Research agent API (`/api/research-tools`) — Claude-powered discovery of new AI tool releases for future daily automation | Done |
 
 ### 4.5 Data Layer
 
@@ -165,6 +173,8 @@ The framework is the organizing backbone of all content on the platform.
 | DAT-7 | Seed tutorials (10 tutorials, L0–L4) for development and fallback | Done |
 | DAT-8 | Stale toggle API (`/api/tutorials/[id]/stale`) — database-backed | Done |
 | DAT-9 | `is_stale` boolean column on tutorials table | Done |
+| DAT-10 | 28 AI tools with 100+ milestones, significance ratings (high/medium/low) | Done |
+| DAT-11 | Hot News config with 8 curated items (config-driven, manually updated) | Done |
 
 ---
 
@@ -214,6 +224,9 @@ The framework is the organizing backbone of all content on the platform.
 6. **Content-relevant hero images** — Together AI FLUX generates infographic/mind-map style images from tutorial summary and action items, not generic abstract shapes.
 7. **He-Man theme system** — Character-based UI metaphors (Orko for ratings, Moss Man for stale markers, Sorceress for achievements) provide personality without being a full retro theme.
 8. **Hybrid persistence** — User preferences (bookmarks, ratings, progress, achievements) use localStorage for privacy. Content management actions (stale markers) use Supabase for shared state.
+9. **Config-driven Hot News** — Curated news items in `config/hot-news.ts` are manually updated. Shows 3 items by default, expandable to 8. Each item includes date, headline, teaser, tool name, level, and optional URL.
+10. **Collapsible timeline with significance** — Milestones tagged with `high`, `medium`, or `low` significance. Time-bucketed sections auto-expand for recent periods and show only high-significance items when collapsed.
+11. **Research agent pattern** — `GET /api/research-tools?since=YYYY-MM` uses Claude to discover new tool releases. Returns structured `ToolRelease[]` data. Designed for future Vercel Cron daily automation.
 
 ---
 
