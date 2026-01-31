@@ -7,6 +7,7 @@ import { getAllTutorials as getSeedTutorials } from "@/data/seed-tutorials";
 import { LevelBadge } from "@/components/LevelBadge";
 import { TutorialActions } from "@/components/TutorialActions";
 import { ToolBadge } from "@/components/ToolBadge";
+import { TutorialRating } from "@/components/TutorialRating";
 import { renderMarkdown } from "@/lib/markdown";
 
 interface Props {
@@ -155,6 +156,14 @@ export default async function TutorialPage({ params }: Props) {
           </ul>
         </section>
       )}
+
+      {/* Orko Rating */}
+      <section className="mt-10 rounded-2xl border border-bc-border bg-bc-surface p-6 text-center space-y-2">
+        <h3 className="text-lg font-bold">How many Orkos does this deserve?</h3>
+        <div className="flex justify-center">
+          <TutorialRating tutorialId={tutorial.id} size="lg" />
+        </div>
+      </section>
 
       {/* Sources */}
       {tutorial.source_urls.length > 0 && (
