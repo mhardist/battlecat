@@ -45,6 +45,7 @@ export const SEED_TUTORIALS: Tutorial[] = [
     ],
     source_count: 2,
     image_url: null,
+    is_stale: false,
     is_published: true,
     created_at: "2025-01-15T10:00:00Z",
     updated_at: "2025-01-15T10:00:00Z",
@@ -88,6 +89,7 @@ export const SEED_TUTORIALS: Tutorial[] = [
     source_urls: ["https://example.com/custom-gpts-guide"],
     source_count: 1,
     image_url: null,
+    is_stale: false,
     is_published: true,
     created_at: "2025-01-16T14:30:00Z",
     updated_at: "2025-01-18T09:00:00Z",
@@ -138,6 +140,7 @@ export const SEED_TUTORIALS: Tutorial[] = [
     ],
     source_count: 3,
     image_url: null,
+    is_stale: false,
     is_published: true,
     created_at: "2025-01-18T11:00:00Z",
     updated_at: "2025-01-20T16:00:00Z",
@@ -190,6 +193,7 @@ export const SEED_TUTORIALS: Tutorial[] = [
     ],
     source_count: 2,
     image_url: null,
+    is_stale: false,
     is_published: true,
     created_at: "2025-01-20T08:00:00Z",
     updated_at: "2025-01-22T14:00:00Z",
@@ -246,6 +250,7 @@ export const SEED_TUTORIALS: Tutorial[] = [
     ],
     source_count: 3,
     image_url: null,
+    is_stale: false,
     is_published: true,
     created_at: "2025-01-22T10:00:00Z",
     updated_at: "2025-01-25T11:00:00Z",
@@ -299,6 +304,7 @@ export const SEED_TUTORIALS: Tutorial[] = [
     ],
     source_count: 2,
     image_url: null,
+    is_stale: false,
     is_published: true,
     created_at: "2025-01-19T09:00:00Z",
     updated_at: "2025-01-21T15:00:00Z",
@@ -358,9 +364,327 @@ export const SEED_TUTORIALS: Tutorial[] = [
     ],
     source_count: 1,
     image_url: null,
+    is_stale: false,
     is_published: true,
     created_at: "2025-01-23T12:00:00Z",
     updated_at: "2025-01-25T10:00:00Z",
+  },
+  {
+    id: "seed-08",
+    slug: "build-custom-gpt-claude-project-gemini-gem",
+    title: "Build Your First Custom GPT, Claude Project, or Gemini Gem",
+    summary:
+      "Stop repeating yourself every conversation. This step-by-step guide walks you through building personalized AI assistants on all three major platforms — the single biggest upgrade from L0 to L1.",
+    body: `## You're Wasting 30% of Every AI Conversation
+
+Every time you open a new chat and type "I'm a marketing manager at a SaaS startup, I need..." — you've already lost. That context you just typed? The AI forgets it the moment you close the tab. You're at L0: Asker. The AI is a stranger every single time.
+
+> The jump from L0 to L1 isn't about learning a new tool. It's about teaching AI who you are — once — so it never forgets.
+
+---
+
+## Why This Matters
+
+Custom GPTs, Claude Projects, and Gemini Gems are the same concept on three platforms: **a persistent AI assistant pre-loaded with your context**. Your role, your industry, your preferences, your communication style, your recurring tasks. Set it up once, use it forever.
+
+The people who've made this jump report getting **2-3x better outputs** immediately. Not because the AI got smarter — because it finally knows who it's talking to.
+
+---
+
+## How to Build One on Each Platform
+
+### Custom GPTs (ChatGPT Plus)
+
+1. Click **Explore GPTs** in the sidebar, then **+ Create**
+2. In the **Configure** tab, write instructions that cover:
+   - Who you are (role, industry, company size)
+   - How you want responses formatted (bullet points? paragraphs? with examples?)
+   - What the GPT should never do (no generic advice, no fluff)
+3. Upload any reference documents — style guides, SOPs, product docs
+4. Add **Prompt Starters** like "Draft a customer email about..." or "Analyze this competitor's landing page"
+5. Test it with real tasks, refine the instructions, repeat
+
+> Pro tip: Use the RODES framework — **R**ole, **O**bjective, **D**etails, **E**xamples, **S**ense Check. Start every instruction set with who the GPT is and what it's trying to achieve.
+
+### Claude Projects
+
+1. Open **claude.ai**, click **Projects** in the sidebar, then **New Project**
+2. Set a **Project Name** and write detailed **Project Instructions**
+3. Upload files directly — Claude can reference PDFs, docs, spreadsheets, codebases
+4. Every conversation within the project inherits the full context
+5. Use it for ongoing work: weekly reports, content calendars, code reviews
+
+### Gemini Gems
+
+1. In **gemini.google.com**, find **Gems** in the sidebar
+2. Click **Create Gem** and define the persona
+3. Add behavioral instructions and knowledge context
+4. Gems integrate with Google Workspace — they can reference your Drive, Docs, and Sheets
+
+---
+
+## The Grocery Test
+
+Here's how you know it's working: **ask your custom AI to make you a grocery list.**
+
+- **L0 response**: Generic list of common items
+- **L1 response**: Knows you're vegetarian, shops at Trader Joe's, cooks for two, avoids gluten, and always needs more coffee
+
+If your AI can't pass this test, your instructions aren't specific enough.
+
+---
+
+## Common Mistakes
+
+- **Too vague**: "Be helpful and professional" tells the AI nothing. Instead: "You are a content strategist for B2B SaaS. Write in a direct, confident tone. Use bullet points. Always include 3 specific examples."
+- **Too restrictive**: Don't micromanage every response format. Give personality and constraints, not scripts.
+- **No examples**: Include 2-3 examples of ideal outputs in your instructions. This is the single most effective technique.
+
+---
+
+## The Bottom Line
+
+Building a Custom GPT, Claude Project, or Gemini Gem takes 15 minutes. The time you save over the next month will be measured in hours. This is the easiest, highest-ROI level-up in the entire AI Maturity Framework. Do it today.`,
+    maturity_level: 0,
+    level_relation: "level-up",
+    topics: ["custom GPTs", "Claude Projects", "Gemini Gems", "personalization"],
+    tags: ["level-up", "custom-gpts", "projects", "gems", "personalization", "L0-to-L1"],
+    tools_mentioned: ["Custom GPTs", "Projects", "Gems", "ChatGPT", "Claude", "Gemini"],
+    difficulty: "beginner",
+    action_items: [
+      "Build a Custom GPT (or Claude Project or Gem) with your role, industry, and communication preferences in the instructions",
+      "Run the Grocery Test — ask it for a grocery list and check if the output reflects YOUR dietary preferences and shopping habits",
+      "Upload one reference document (style guide, SOP, or product brief) and test a real work task against it",
+    ],
+    source_urls: [
+      "https://www.adventuresincre.com/how-to-build-custom-gpt-gemini-gem-claude-project-2025/",
+    ],
+    source_count: 1,
+    image_url: null,
+    is_stale: false,
+    is_published: true,
+    created_at: "2025-05-20T10:00:00Z",
+    updated_at: "2025-05-20T10:00:00Z",
+  },
+  {
+    id: "seed-09",
+    slug: "vibe-coding-tools-compared-lovable-v0-bolt",
+    title: "I Tested Every Vibe Coding Tool — Here's Which One to Start With",
+    summary:
+      "Lovable, v0, Bolt, and Replit all promise to turn your words into working apps. After building the same project on each, here's what actually works — and where each tool falls apart.",
+    body: `## The Promise: Describe an App, Get a Working App
+
+Vibe coding is the L2 superpower: you describe what you want in plain English, and AI generates a fully functional application. No syntax, no boilerplate, no Stack Overflow rabbit holes. You design, AI builds.
+
+But which tool should you actually use? They all sound the same in their marketing. Here's what happens when you test them with real projects.
+
+> The best vibe coding tool isn't the one with the most features — it's the one that gets you to a working prototype fastest with the fewest dead ends.
+
+---
+
+## The Tools, Ranked for Beginners
+
+### Lovable — Best All-Around Starting Point
+
+**What it does**: Full-stack app generation from a text description. Handles frontend, backend, database, auth, and deployment in one flow.
+
+**What surprised me**: The UI quality is genuinely impressive out of the box. It generates clean, responsive layouts that look professional without tweaking. It also handles Supabase integration natively, so you get real data persistence without configuring anything.
+
+**Where it struggles**: Complex business logic. Once your app needs multi-step workflows or nuanced conditional logic, you'll hit limits. Good for MVPs, tough for production apps.
+
+**Best for**: Complete web apps, dashboards, CRUD tools, internal tools.
+
+### v0 by Vercel — Best for UI Components
+
+**What it does**: Converts prompts into React components using shadcn/ui and Tailwind CSS.
+
+**What surprised me**: The component quality is exceptional. If you need a specific UI element — a pricing table, a data grid, a settings panel — v0 often nails it on the first try.
+
+**Where it struggles**: It generates components, not full apps. You need to know how to wire them together, or use it alongside another tool.
+
+**Best for**: Frontend components, landing pages, design system pieces.
+
+### Bolt.new — Best for Creative Projects
+
+**What it does**: Rapid prototyping with live preview in the browser. Open source.
+
+**Where it struggles**: Production readiness. Bolt is amazing for exploring ideas but the generated code often needs significant cleanup before shipping.
+
+**Best for**: Quick iterations, hackathon projects, exploring ideas visually.
+
+### Replit — Best for Learning
+
+**What it does**: Full cloud IDE with an AI agent that can build and deploy apps from natural language.
+
+**What surprised me**: The agent mode is powerful. It doesn't just generate code — it sets up the project, installs dependencies, configures the environment, and deploys. You can watch it work and learn from its decisions.
+
+**Where it struggles**: Can be overwhelming for pure beginners. The IDE interface is powerful but complex.
+
+**Best for**: People who want to understand what's happening under the hood.
+
+---
+
+## The L1 → L2 Mindset Shift
+
+Moving from L1 (personalized chat) to L2 (building things) requires a mental model change:
+
+- **L1 thinking**: "Help me write an email about X"
+- **L2 thinking**: "Build me a dashboard that shows Y with filters for Z"
+
+> At L2, your value isn't typing code — it's having a clear vision of what should exist. The clearer your spec, the better the output.
+
+Three rules for better vibe coding prompts:
+
+1. **Be specific about structure**: "A two-column layout with a sidebar showing filters and a main area showing cards" beats "a nice-looking page"
+2. **Describe interactions**: "When I click a card, it expands to show full details with an edit button" gives the AI something to build
+3. **Iterate in small steps**: Don't try to describe the entire app at once. Build one screen, refine it, then add the next
+
+---
+
+## The Recommended Path
+
+Start with **Lovable** to build your first complete app. Use **v0** when you need a specific, polished UI component. Try **Bolt** for quick experiments and creative exploration. Graduate to **Replit** when you want to learn what's happening under the hood.
+
+And when your prototype needs real engineering — authentication, payments, production deployment — that's when you've hit the L2→L3 cliff. That's a different tutorial.
+
+---
+
+## The Bottom Line
+
+You can go from idea to working, deployed app in an afternoon. That's not an exaggeration — it's the new baseline. The question isn't whether vibe coding works; it's which tool fits your project. Start with Lovable, iterate fast, and don't let perfect be the enemy of shipped.`,
+    maturity_level: 1,
+    level_relation: "level-up",
+    topics: ["vibe coding", "Lovable", "v0", "Bolt", "app building"],
+    tags: ["level-up", "vibe-coding", "lovable", "v0", "bolt", "replit", "comparison", "L1-to-L2"],
+    tools_mentioned: ["Lovable", "v0", "Bolt", "Replit"],
+    difficulty: "beginner",
+    action_items: [
+      "Sign up for Lovable (free tier) and describe a simple app idea in 3 sentences — a personal dashboard, a reading list tracker, or a recipe organizer",
+      "Take the same idea to v0.dev and compare the UI quality of what each tool generates",
+      "Iterate 3 times on your Lovable prototype — each time, be more specific about one thing you want changed",
+    ],
+    source_urls: [
+      "https://uxplanet.org/i-tested-5-ai-coding-tools-so-you-dont-have-to-b229d4b1a324",
+    ],
+    source_count: 1,
+    image_url: null,
+    is_stale: false,
+    is_published: true,
+    created_at: "2025-05-21T10:00:00Z",
+    updated_at: "2025-05-21T10:00:00Z",
+  },
+  {
+    id: "seed-10",
+    slug: "claude-code-best-practices-agentic-coding",
+    title: "Claude Code Best Practices: From Vibe Coder to Agentic Engineer",
+    summary:
+      "Anthropic's own engineering team shares how they use Claude Code to ship production code autonomously. The definitive guide to crossing from L2 (prototyping) to L3 (supervising AI agents).",
+    body: `## The L2 Ceiling
+
+You've built prototypes with Lovable or v0. They look great in demos. But when it's time to add authentication, handle edge cases, write tests, or deploy to production — you hit a wall. Vibe coding tools generate code; **agentic coding tools engineer solutions**.
+
+Claude Code is Anthropic's answer to this gap: a terminal-based AI agent that reads your entire codebase, makes architectural decisions, writes code across multiple files, runs tests, and iterates until things work.
+
+> The L2→L3 shift isn't about using a harder tool. It's about changing your role: from describing what you want (designer) to defining what "done" looks like (supervisor).
+
+---
+
+## What Makes Claude Code Different
+
+Unlike vibe coding tools that generate apps from scratch, Claude Code drops into your **existing** project. It reads your file structure, understands your patterns, respects your conventions, and extends what's already there. Key differences:
+
+- **Full codebase awareness**: Reads your entire repo, not just the file you're looking at
+- **Terminal-native**: Runs alongside git, npm, and your existing workflow
+- **Agentic loop**: Plans → executes → verifies → iterates autonomously
+- **Tool use**: Can run tests, check types, execute commands, and verify its own work
+
+---
+
+## CLAUDE.md: Your Agent's Briefing Document
+
+The single most impactful thing you can do is create a **CLAUDE.md** file in your repo root. Claude Code reads this automatically at the start of every session. Think of it as the agent's onboarding doc.
+
+What to include:
+
+- **Build commands**: \`npm run build\`, \`npm test\`, lint commands
+- **Architecture overview**: "This is a Next.js 15 app with Supabase backend, organized by feature"
+- **Code conventions**: "We use TypeScript strict mode. No \`any\` types. Prefer named exports."
+- **Common patterns**: "API routes use the shared \`createServerClient()\` helper for Supabase"
+- **What NOT to do**: "Never modify the database schema without updating \`schema.sql\`"
+
+> The better your CLAUDE.md, the less you need to repeat yourself in prompts. It's the L3 equivalent of Custom GPT instructions — context that persists.
+
+---
+
+## Test-Driven Development with Agents
+
+Anthropic's team calls this their favorite workflow, and it changes how you think about delegation:
+
+1. **You write the test** (or describe what the test should verify)
+2. **Claude Code implements the feature** to make the test pass
+3. **Claude Code runs the test** to verify it works
+4. **You review the diff**, not the process
+
+This is powerful because the test is your **acceptance criteria**. You're defining "done" in code. The agent figures out how to get there.
+
+### Example workflow:
+\`\`\`
+"Write a test that verifies the /api/submit endpoint returns 400
+when no URL is provided, then implement the validation to make it pass."
+\`\`\`
+
+Claude Code will write the test, run it (it fails), implement the validation, run it again (it passes), and present you with the diff.
+
+---
+
+## The Key Mindset Shifts
+
+### 1. Stop watching. Start reviewing.
+If you're watching Claude Code type every character, you're still at L2. Let it work. Come back and review the diff. If the tests pass and the code is clean, approve it.
+
+### 2. Write prompts like you'd write tickets
+Bad: "Fix the login bug"
+Good: "Users report that login fails when their email contains a '+' character. The issue is likely in the email validation regex in \`lib/auth.ts\`. Write a test that reproduces this, then fix it."
+
+### 3. Use \`/compact\` for long sessions
+Claude Code conversations accumulate context. Use \`/compact\` periodically to summarize and free up the context window for new work.
+
+### 4. Let it run commands
+Claude Code can execute shell commands, run tests, and check its own work. Don't be afraid to let it. The agentic loop — plan, execute, verify — only works if the agent can verify.
+
+---
+
+## Common Pitfalls
+
+- **Underdefined tasks**: "Make the app better" gives the agent nothing to work with. Be specific about what needs to change and how you'll know it's done.
+- **Overriding the agent's plan**: If Claude Code proposes an approach and you immediately redirect, you're micromanaging. Let it try. Redirect if the result is wrong, not the approach.
+- **Skipping CLAUDE.md**: Without it, every session starts cold. You'll waste the first 5 minutes of every conversation re-explaining your codebase.
+
+---
+
+## The Bottom Line
+
+Claude Code isn't a better autocomplete. It's a junior engineer that reads your codebase, follows your conventions, writes tests, and ships PRs. Your job is to define what "done" looks like, review the output, and course-correct when needed. That's L3: Supervisor → Agent. The sooner you stop directing every keystroke, the sooner you start shipping faster than you ever could alone.`,
+    maturity_level: 2,
+    level_relation: "level-up",
+    topics: ["Claude Code", "agentic coding", "test-driven development", "CLAUDE.md"],
+    tags: ["level-up", "claude-code", "agentic", "tdd", "best-practices", "L2-to-L3"],
+    tools_mentioned: ["Claude Code", "Cursor"],
+    difficulty: "intermediate",
+    action_items: [
+      "Install Claude Code (brew install claude-code) and run it in an existing project — ask it to explain the codebase architecture",
+      "Create a CLAUDE.md file in your repo with build commands, conventions, and architecture overview",
+      "Try the TDD workflow: write a test description, let Claude Code implement the feature and verify it passes",
+    ],
+    source_urls: [
+      "https://www.anthropic.com/engineering/claude-code-best-practices",
+    ],
+    source_count: 1,
+    image_url: null,
+    is_stale: false,
+    is_published: true,
+    created_at: "2025-05-22T10:00:00Z",
+    updated_at: "2025-05-22T10:00:00Z",
   },
 ];
 

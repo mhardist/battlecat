@@ -12,6 +12,7 @@ import {
   LEVEL_RESULTS,
   calculateLevel,
 } from "@/config/quiz";
+import { useAchievementContext } from "@/components/AchievementProvider";
 
 type QuizState = "welcome" | "quiz" | "results";
 
@@ -21,6 +22,7 @@ export default function LevelUpPage() {
   const levels = getAllLevels();
   const { toggle, isBookmarked } = useBookmarks();
   const { getRating } = useRatings();
+  const { trackQuizComplete } = useAchievementContext();
 
   const [quizState, setQuizState] = useState<QuizState>("welcome");
   const [currentQ, setCurrentQ] = useState(0);
@@ -70,6 +72,7 @@ export default function LevelUpPage() {
         const level = calculateLevel(newAnswers);
         setResultLevel(level);
         localStorage.setItem(STORAGE_KEY, String(level));
+        trackQuizComplete();
         setFadeClass("opacity-0");
         setTimeout(() => {
           setQuizState("results");

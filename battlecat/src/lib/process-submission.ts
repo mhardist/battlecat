@@ -59,6 +59,8 @@ export async function processSubmission(submissionId: string): Promise<{
     const generated = await generateTutorial(extracted.raw_text, submission.url);
 
     // 7. Check for existing tutorial on same topic to merge
+    //    Use .maybeSingle() — .single() throws when 0 or 2+ rows match,
+    //    which was crashing the pipeline for every new-topic submission.
     const { data: existing } = await supabase
       .from("tutorials")
       .select("*")
@@ -66,7 +68,7 @@ export async function processSubmission(submissionId: string): Promise<{
       .eq("maturity_level", generated.classification.maturity_level)
       .eq("is_published", true)
       .limit(1)
-      .single();
+      .maybeSingle();
 
     let tutorialId: string;
 
@@ -92,26 +94,42 @@ export async function processSubmission(submissionId: string): Promise<{
       if (updateError) throw updateError;
       tutorialId = existing.id;
     } else {
-      // Create new tutorial
-      const { data: created, error: insertError } = await supabase
+      // Create new tutorial — retry with a unique slug suffix on collision
+      const tutorialPayload = {
+        slug: generated.slug,
+        title: generated.title,
+        summary: generated.summary,
+        body: generated.body,
+        maturity_level: generated.classification.maturity_level,
+        level_relation: generated.classification.level_relation,
+        topics: generated.classification.topics,
+        tags: generated.classification.tags,
+        tools_mentioned: generated.classification.tools_mentioned,
+        difficulty: generated.classification.difficulty,
+        action_items: generated.action_items,
+        source_urls: [submission.url],
+        source_count: 1,
+      };
+
+      let { data: created, error: insertError } = await supabase
         .from("tutorials")
-        .insert({
-          slug: generated.slug,
-          title: generated.title,
-          summary: generated.summary,
-          body: generated.body,
-          maturity_level: generated.classification.maturity_level,
-          level_relation: generated.classification.level_relation,
-          topics: generated.classification.topics,
-          tags: generated.classification.tags,
-          tools_mentioned: generated.classification.tools_mentioned,
-          difficulty: generated.classification.difficulty,
-          action_items: generated.action_items,
-          source_urls: [submission.url],
-          source_count: 1,
-        })
+        .insert(tutorialPayload)
         .select("id")
         .single();
+
+      // If slug collision, append a random suffix and retry once
+      if (insertError && insertError.code === "23505") {
+        const suffix = Math.random().toString(36).slice(2, 8);
+        tutorialPayload.slug = `${generated.slug}-${suffix}`;
+        console.log(`[process] Slug collision, retrying with: ${tutorialPayload.slug}`);
+        const retry = await supabase
+          .from("tutorials")
+          .insert(tutorialPayload)
+          .select("id")
+          .single();
+        created = retry.data;
+        insertError = retry.error;
+      }
 
       if (insertError) throw insertError;
       tutorialId = created!.id;

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Tutorial } from "@/types";
 import { LevelBadge } from "./LevelBadge";
 import { ToolBadge } from "./ToolBadge";
+import { StaleOverlay } from "./MossManBadge";
 
 interface TutorialCardProps {
   tutorial: Tutorial;
@@ -22,8 +23,14 @@ export function TutorialCard({
   return (
     <Link
       href={`/tutorials/${tutorial.slug}`}
-      className="group block rounded-xl border border-bc-border bg-bc-surface overflow-hidden transition-all hover:shadow-lg hover:border-bc-primary/30 hover:-translate-y-0.5"
+      className={`group block rounded-xl border bg-bc-surface overflow-hidden transition-all hover:shadow-lg hover:-translate-y-0.5 relative ${
+        tutorial.is_stale
+          ? "border-green-800/40 hover:border-green-700/50"
+          : "border-bc-border hover:border-bc-primary/30"
+      }`}
     >
+      {tutorial.is_stale && <StaleOverlay />}
+
       {/* Hero image */}
       {tutorial.image_url && (
         <div className="relative overflow-hidden">

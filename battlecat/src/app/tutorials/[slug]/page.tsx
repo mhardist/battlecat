@@ -8,6 +8,8 @@ import { LevelBadge } from "@/components/LevelBadge";
 import { TutorialActions } from "@/components/TutorialActions";
 import { ToolBadge } from "@/components/ToolBadge";
 import { TutorialRating } from "@/components/TutorialRating";
+import { MossManBadge } from "@/components/MossManBadge";
+import { TutorialReadTracker } from "@/components/TutorialReadTracker";
 import { renderMarkdown } from "@/lib/markdown";
 
 interface Props {
@@ -55,6 +57,8 @@ export default async function TutorialPage({ params }: Props) {
 
   return (
     <article className="max-w-3xl mx-auto">
+      <TutorialReadTracker tutorialId={tutorial.id} maturityLevel={tutorial.maturity_level} />
+
       {/* Hero Image */}
       {tutorial.image_url && (
         <div className="relative -mx-4 sm:mx-0 mb-8 overflow-hidden rounded-none sm:rounded-2xl">
@@ -64,6 +68,16 @@ export default async function TutorialPage({ params }: Props) {
             className="w-full aspect-[16/9] object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+        </div>
+      )}
+
+      {/* Stale banner */}
+      {tutorial.is_stale && (
+        <div className="flex items-center gap-3 rounded-xl bg-green-950/30 border border-green-800/40 px-4 py-3 mb-6">
+          <MossManBadge tutorialId={tutorial.id} isStale interactive size="md" />
+          <p className="text-sm text-green-400">
+            This tutorial has been marked as <strong>outdated</strong>. The information may no longer be accurate.
+          </p>
         </div>
       )}
 
@@ -85,6 +99,9 @@ export default async function TutorialPage({ params }: Props) {
             <span className="text-xs text-bc-text-secondary">
               Synthesized from {tutorial.source_count} sources
             </span>
+          )}
+          {!tutorial.is_stale && (
+            <MossManBadge tutorialId={tutorial.id} isStale={false} interactive size="sm" />
           )}
         </div>
 

@@ -1,5 +1,20 @@
 import { ExtractedContent, SourceType } from "@/types";
 
+/** Fetch with a timeout (default 20s). Prevents one slow request from eating the 60s budget. */
+async function fetchWithTimeout(
+  url: string,
+  options: RequestInit = {},
+  timeoutMs = 20000,
+): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 /** Detect the source type from a URL */
 export function detectSourceType(url: string): SourceType {
   const hostname = new URL(url).hostname.toLowerCase();
@@ -37,7 +52,7 @@ async function extractArticle(url: string): Promise<string> {
     headers["Authorization"] = `Bearer ${jinaKey}`;
   }
 
-  const response = await fetch(jinaUrl, { headers });
+  const response = await fetchWithTimeout(jinaUrl, { headers });
   if (!response.ok) {
     throw new Error(`Jina Reader failed: ${response.status} ${response.statusText}`);
   }
@@ -113,7 +128,7 @@ async function getTikTokVideoInfo(
   author?: { nickname?: string };
 }> {
   const apiUrl = `https://www.tikwm.com/api/?url=${encodeURIComponent(url)}&hd=1`;
-  const response = await fetch(apiUrl, {
+  const response = await fetchWithTimeout(apiUrl, {
     method: "GET",
     headers: { Accept: "application/json" },
   });
@@ -293,7 +308,7 @@ function extractYouTubeVideoId(url: string): string | null {
  * Downloads the file and parses with pdf-parse v2 (PDFParse class).
  */
 async function extractPdf(url: string): Promise<string> {
-  const response = await fetch(url);
+  const response = await fetchWithTimeout(url, {}, 25000);
   if (!response.ok) {
     throw new Error(`Failed to download PDF: ${response.status}`);
   }

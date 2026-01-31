@@ -2,6 +2,7 @@
 
 import { useRatings } from "@/hooks/useRatings";
 import { OrkoRating } from "./OrkoRating";
+import { useAchievementContext } from "./AchievementProvider";
 
 interface TutorialRatingProps {
   tutorialId: string;
@@ -14,10 +15,16 @@ interface TutorialRatingProps {
  */
 export function TutorialRating({ tutorialId, size = "md" }: TutorialRatingProps) {
   const { getRating, setRating, loaded } = useRatings();
+  const { recheckAchievements } = useAchievementContext();
 
   if (!loaded) {
     return null;
   }
+
+  const handleRate = (id: string, rating: number) => {
+    setRating(id, rating);
+    recheckAchievements();
+  };
 
   return (
     <div className="space-y-1">
@@ -25,7 +32,7 @@ export function TutorialRating({ tutorialId, size = "md" }: TutorialRatingProps)
       <OrkoRating
         tutorialId={tutorialId}
         rating={getRating(tutorialId)}
-        onRate={setRating}
+        onRate={handleRate}
         size={size}
       />
     </div>
