@@ -1,18 +1,20 @@
 # Battle Cat AI
 
-**battlecat.ai** — Text a link from your iPhone, get organized AI learning tutorials on a shareable blog, mapped to the AI Maturity Framework (L0-L4).
+**battlecat.ai** — Send a link from your iPhone via WhatsApp, get organized AI learning tutorials on a shareable blog, mapped to the AI Maturity Framework (L0-L4).
 
-## Status: Core Build Complete
+## Status: Live on Vercel
 
-The website, content extractors, AI pipeline, and API endpoints are built. Remaining work is infrastructure provisioning and deployment. See [PLANNING.md](./PLANNING.md) for the full plan and implementation status.
+The site is deployed at **https://battlecat.ai**. The full pipeline (ingestion, extraction, AI processing, publishing) is built and deployed. The processing pipeline uses the Next.js `after()` API to run background tasks on Vercel serverless.
+
+See [PLANNING.md](./PLANNING.md) for the full plan, framework details, and implementation status.
 
 ## How It Works
 
-1. **Text a link** from your iPhone to a dedicated Twilio number (or paste via web form)
-2. **Content is extracted** — articles (Jina Reader), TikTok/YouTube audio (Deepgram Nova-3), tweets, PDFs, LinkedIn
-3. **AI classifies it** by Maturity Level (L0 Asker → L4 Architect)
+1. **Send a link** via WhatsApp to +1 (415) 523-8886 (Twilio Sandbox) — or paste via web form at battlecat.ai/submit
+2. **Content is extracted** — articles (Jina Reader), TikTok audio (tikwm.com + Deepgram Nova-3), YouTube (youtube-transcript), tweets, PDFs, LinkedIn
+3. **AI classifies it** by Maturity Level (L0 Asker → L4 Architect) using Claude Sonnet
 4. **Merges with existing content** on the same topic (links become references, content is king)
-5. **Published** as a step-by-step tutorial on battlecat.ai
+5. **Published** as a step-by-step tutorial on battlecat.ai (visible within 60s via ISR)
 
 ## The Framework
 
@@ -26,22 +28,21 @@ The website, content extractors, AI pipeline, and API endpoints are built. Remai
 
 ## What's Built
 
-- **Website** — Next.js 16 app with browse, search, paths, level-up, bookmarks, dark mode, mobile nav
-- **Content Extractors** — 6 source types: article, TikTok, tweet, YouTube, PDF, LinkedIn
+- **Website** — Next.js 16 app with browse, search, paths, level-up, bookmarks, dark mode, mobile nav, RSS feed, per-page SEO, loading skeletons
+- **Content Extractors** — 6 source types: article, TikTok, tweet, YouTube, PDF, LinkedIn (all cloud-based, no binary dependencies)
 - **AI Pipeline** — Claude Sonnet for classification (L0-L4), tutorial generation, content merging
-- **API Endpoints** — Twilio SMS webhook, web form submission, processing pipeline
-- **Database Schema** — Supabase Postgres with full-text search, RLS policies
+- **API Endpoints** — WhatsApp webhook, web form submission, tutorial data API, processing pipeline
+- **Database** — Supabase Postgres with full-text search, RLS policies, async data layer
+- **Deployment** — Vercel with auto-deploy from `main`, GoDaddy DNS, battlecat.ai domain
 
 See [`battlecat/README.md`](./battlecat/README.md) for project structure and setup instructions.
 
-## What Needs Manual Setup
+## What's Remaining
 
-- Supabase project provisioning + schema deployment
-- Twilio phone number + webhook configuration
-- Deepgram, Anthropic, Jina API keys
-- DNS: battlecat.ai → Cloudflare Pages
-- yt-dlp on server for video extraction
-- Logo and visual brand assets
+- **End-to-end testing** — Merge latest PR, test TikTok → tutorial flow
+- **Logo and visual brand assets** — Use Midjourney/DALL-E with brand brief in PLANNING.md
+- **Rotate API keys** — Keys were exposed during development session
+- **Prompt tuning** — Tune AI prompts based on real results
 
 ## Reference Materials
 

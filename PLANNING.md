@@ -4,7 +4,7 @@
 
 **battlecat.ai** — A polished, branded evergreen blog that turns your late-night TikTok saves and article forwards into organized, step-by-step AI learning tutorials, mapped to the AI Maturity Framework (Levels 0–4).
 
-You text a link from your iPhone. The system extracts, processes, categorizes by maturity level, merges related content into rich tutorials, and publishes to a shareable website. Links become references. The synthesized content is the product.
+You text a link from your iPhone via WhatsApp. The system extracts, processes, categorizes by maturity level, merges related content into rich tutorials, and publishes to a shareable website. Links become references. The synthesized content is the product.
 
 ---
 
@@ -12,18 +12,20 @@ You text a link from your iPhone. The system extracts, processes, categorizes by
 
 | Question | Answer |
 |----------|--------|
-| **Ingestion** | Text (SMS) via Twilio — dedicated phone number |
+| **Ingestion** | WhatsApp via Twilio Sandbox + web form on battlecat.ai |
 | **Primary content** | TikTok, articles, tweets |
 | **Secondary content** | YouTube, PDFs, LinkedIn |
-| **TikTok extraction** | Spoken words only (audio transcription) |
+| **TikTok extraction** | tikwm.com API → Deepgram Nova-3 transcription (spoken words only) |
+| **YouTube extraction** | youtube-transcript npm package → Jina Reader fallback |
 | **AI topics** | All topics, organized by framework level |
 | **Content merging** | Yes — merge multiple sources into one topic. Content is king, links are references |
 | **Website vibe** | Polished / branded — new brand "Battle Cat" (He-Man 80s) |
 | **Audience** | Start private, go public later |
 | **Tech comfort** | Technical — can code, deploy, maintain |
-| **Domain** | battlecat.ai — parked at GoDaddy, not pointed yet |
-| **Preferences** | Cloudflare, AWS/GCP experience, Twilio already in toolbelt |
-| **Repo** | New repo: `battlecat` |
+| **Domain** | battlecat.ai — DNS managed at GoDaddy, pointed to Vercel |
+| **Hosting** | Vercel (Next.js native deployment) |
+| **Preferences** | Vercel for hosting, Supabase for data, Twilio for messaging |
+| **Repo** | Monorepo: `playground/battlecat` |
 
 ### Must-Have Features
 - Search across all saved content
@@ -132,38 +134,37 @@ The system should also tag content with:
 
 ---
 
-## Recommended Tech Stack
+## Tech Stack (Actual)
 
 ### Infrastructure
-- **DNS / CDN / Edge:** Cloudflare (point battlecat.ai from GoDaddy to Cloudflare nameservers)
-- **Hosting:** Cloudflare Pages (website) + Cloudflare Workers (API/backend)
-- **Database:** Supabase (Postgres + auth + real-time + storage)
-- **Search:** Supabase full-text search initially, upgrade to Typesense or Meilisearch later
-- **Queue:** Cloudflare Queues or Supabase Edge Functions for async processing
-- **Media storage:** Cloudflare R2 (S3-compatible, no egress fees)
+- **DNS:** GoDaddy (A + CNAME records pointing to Vercel)
+- **Hosting:** Vercel (Next.js native deployment from `main` branch)
+- **Database:** Supabase (Postgres + RLS + full-text search)
+- **Search:** Supabase full-text search (GIN indexes on tutorials table)
 
 ### Ingestion
-- **SMS:** Twilio — dedicated phone number receives texts, webhook hits the API
-- **Future inputs:** iOS Shortcut, email (Cloudflare Email Workers), web form on battlecat.ai
+- **WhatsApp:** Twilio WhatsApp Sandbox — send link via WhatsApp to `+14155238886`, webhook hits `/api/ingest`
+- **Web form:** battlecat.ai/submit — paste any URL + optional note
+- **Future inputs:** iOS Shortcut, email, SMS (requires 10DLC registration)
 
 ### Content Extraction
-- **Articles / blogs:** Jina Reader API (with optional API key for higher rate limits)
-- **TikTok:** yt-dlp to extract audio stream URL → Deepgram Nova-3 for transcription (spoken words only)
-- **YouTube:** yt-dlp subtitles (VTT auto-generated/manual) → Deepgram audio fallback → Jina Reader last resort
-- **Twitter/X:** Jina Reader with fxtwitter proxy fallback (optional Twitter API v2 bearer token)
-- **LinkedIn:** Jina Reader for public articles/posts, Google cache fallback for /pulse/ articles, manual paste workaround for blocked content
+- **Articles / blogs:** Jina Reader API (`r.jina.ai`) with optional API key for higher rate limits
+- **TikTok:** tikwm.com API (cloud-based, no binary dependencies) → extracts video stream URL → Deepgram Nova-3 transcription (spoken words only) → Jina Reader fallback for page content
+- **YouTube:** youtube-transcript npm package (cloud-based, no binary dependencies) → Jina Reader fallback
+- **Twitter/X:** Jina Reader with fxtwitter proxy fallback
+- **LinkedIn:** Jina Reader for public articles/posts, Google cache fallback for /pulse/ articles
 - **PDFs:** pdf-parse v2 (text + metadata extraction)
 
 ### AI Processing
-- **Primary LLM:** Anthropic Claude API (Sonnet for speed, Opus for complex synthesis)
+- **Primary LLM:** Anthropic Claude API (Sonnet `claude-sonnet-4-20250514`)
 - **Tasks:** Categorize by level (0–4), extract key concepts, generate tutorial structure, identify merge candidates, tag topics, assign difficulty
-- **Merging pipeline:** When new content arrives on an existing topic, the LLM synthesizes both into an updated, richer tutorial
+- **Merging pipeline:** When new content arrives on an existing topic, Claude synthesizes both into an updated, richer tutorial
 
 ### Website
-- **Framework:** Next.js 14+ (App Router)
-- **Styling:** Tailwind CSS
-- **Deployment:** Cloudflare Pages
-- **Auth:** Supabase Auth (for private phase, admin access)
+- **Framework:** Next.js 16 (App Router, Turbopack)
+- **Styling:** Tailwind CSS v4 with custom CSS properties
+- **Deployment:** Vercel (auto-deploy from `main` branch)
+- **Data:** Supabase async data layer with seed data fallback, ISR (60s revalidation)
 - **Branding:** Battle Cat (He-Man 80s) — needs full brand identity design (see branding task below)
 
 ---
@@ -171,49 +172,48 @@ The system should also tag content with:
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                     YOUR iPHONE                          │
-│        Text a link to your Battle Cat number             │
-└──────────────────────┬──────────────────────────────────┘
-                       │ SMS with URL + optional note
-                       ▼
 ┌──────────────────────────────────────────────────────────┐
-│              TWILIO SMS WEBHOOK                           │
-│  Receives SMS → forwards to Cloudflare Worker            │
+│                     YOUR iPHONE                           │
+│     WhatsApp a link to +1 (415) 523-8886                 │
+│     Or paste a link at battlecat.ai/submit               │
 └──────────────────────┬───────────────────────────────────┘
-                       │
+                       │ WhatsApp message / web POST
                        ▼
 ┌──────────────────────────────────────────────────────────┐
-│          INGESTION WORKER (Cloudflare)                    │
+│        INGESTION (Vercel Serverless Functions)            │
+│                                                           │
+│  /api/ingest — Twilio WhatsApp webhook                   │
+│  /api/submit — Web form POST endpoint                    │
 │                                                           │
 │  • Parse URL from message body                           │
 │  • Detect source type (TikTok, article, tweet, etc.)     │
-│  • Queue for extraction                                  │
-│  • Send confirmation SMS back                            │
+│  • Store submission in Supabase (status: "received")     │
+│  • Use after() to run processing in background           │
+│  • Return confirmation (TwiML / JSON)                    │
 └──────────────────────┬───────────────────────────────────┘
                        │
                        ▼
 ┌──────────────────────────────────────────────────────────┐
-│          EXTRACTION ENGINE (Cloudflare Worker)            │
+│        EXTRACTION ENGINE (lib/extract.ts)                 │
 │                                                           │
-│  • Articles: Jina Reader / Firecrawl                     │
-│  • TikTok: yt-dlp + Deepgram Nova-3 (spoken words)       │
-│  • YouTube: yt-dlp transcript                            │
-│  • Twitter: Tweet/thread extraction                      │
-│  • PDFs: pdf-parse                                       │
-│  • LinkedIn: scrape or fallback                          │
+│  • Articles: Jina Reader (r.jina.ai)                     │
+│  • TikTok: tikwm.com API → Deepgram Nova-3 audio        │
+│  • YouTube: youtube-transcript npm package               │
+│  • Twitter: Jina Reader → fxtwitter fallback             │
+│  • PDFs: pdf-parse v2                                    │
+│  • LinkedIn: Jina Reader → Google cache fallback         │
 └──────────────────────┬───────────────────────────────────┘
                        │ raw text + metadata
                        ▼
 ┌──────────────────────────────────────────────────────────┐
-│          AI PROCESSING PIPELINE (Claude API)              │
+│        AI PROCESSING PIPELINE (lib/ai.ts)                │
 │                                                           │
 │  1. Classify AI Maturity Level (0–4)                     │
 │  2. Extract topics, key concepts, action items           │
 │  3. Check for existing content on same topic             │
 │  4. If match: MERGE into richer tutorial                 │
 │     If new: CREATE new tutorial                          │
-│  5. Generate step-by-step tutorial structure             │
+│  5. Generate step-by-step tutorial structure              │
 │  6. Tag: level, topic, tools mentioned, difficulty       │
 │  7. Generate summary + title                             │
 │  8. Flag as level-up, level-practice, or cross-level     │
@@ -221,36 +221,42 @@ The system should also tag content with:
                        │ structured tutorial object
                        ▼
 ┌──────────────────────────────────────────────────────────┐
-│          SUPABASE (Storage Layer)                         │
+│        SUPABASE (Storage Layer)                           │
 │                                                           │
+│  • submissions table (ingestion tracking + status)       │
 │  • tutorials table (content, metadata, level, tags)      │
 │  • sources table (original URLs, extraction data)        │
-│  • topics table (topic taxonomy)                         │
-│  • user_progress table (bookmarks, completion)           │
-│  • Full-text search index                                │
+│  • Full-text search (GIN indexes)                        │
+│  • Row Level Security policies                           │
 └──────────────────────┬───────────────────────────────────┘
                        │
                        ▼
 ┌──────────────────────────────────────────────────────────┐
-│          BATTLECAT.AI (Next.js on Cloudflare Pages)      │
+│        BATTLECAT.AI (Next.js 16 on Vercel)               │
 │                                                           │
-│  VIEWS:                                                  │
-│  • Home — latest tutorials, featured content             │
-│  • By Level — L0, L1, L2, L3, L4 sections               │
-│  • Level-Up — "You're at L2, here's how to reach L3"    │
-│  • By Topic — prompt engineering, agents, RAG, etc.      │
-│  • Learning Paths — sequential ordered content           │
-│  • Tutorial Detail — full step-by-step post              │
-│  • Search — full-text across all content                 │
+│  SERVER PAGES (ISR, revalidate every 60s):               │
+│  • Home — latest tutorials, framework overview, stats    │
+│  • Tutorial Detail — full step-by-step tutorial          │
+│  • Level Pages (L0-L4) — level info + tutorials          │
+│  • Learning Paths — visual L0→L4 timeline                │
+│  • RSS Feed — /feed.xml                                  │
+│                                                           │
+│  CLIENT PAGES (fetch from /api/tutorials on mount):      │
+│  • Browse — filter by level, topic, difficulty           │
+│  • Search — full-text search with level filters          │
+│  • Bookmarks — saved tutorials (localStorage)            │
+│  • Level-Up — interactive level-up content finder        │
+│  • Submit — web form to paste links                      │
 │                                                           │
 │  FEATURES:                                               │
-│  • Bookmark / favorite                                   │
-│  • Share via link                                        │
-│  • Filter by level + topic + tag                         │
-│  • Progress tracking                                     │
-│  • Notes / comments                                      │
-│  • Dark mode                                             │
-│  • Mobile-first responsive                               │
+│  • Bookmark / favorite (localStorage)                    │
+│  • Share via Web Share API + clipboard                    │
+│  • Filter by level + topic + relation + difficulty       │
+│  • Progress tracking (completion + notes)                │
+│  • Dark mode (class toggle + localStorage)               │
+│  • Mobile-first responsive (hamburger nav)               │
+│  • Per-page SEO metadata                                 │
+│  • Loading skeletons                                     │
 └──────────────────────────────────────────────────────────┘
 ```
 
@@ -262,20 +268,20 @@ The system should also tag content with:
 
 - [x] **Task 0.1: Create the `battlecat` project** — Next.js 16, TypeScript, Tailwind CSS v4
 - [ ] **Task 0.2: Brand identity** — Color palette and tokens done. Logo, favicon, OG image need design agent (Midjourney/DALL-E/Ideogram). Brief is below.
-- [ ] **Task 0.3: Point domain** — GoDaddy nameservers → Cloudflare. Cloudflare Pages deployment.
+- [x] **Task 0.3: Point domain** — GoDaddy A + CNAME records → Vercel. Domain added to Vercel project. battlecat.ai is live.
 
-### Phase 1: Ingestion (Text a Link)
+### Phase 1: Ingestion (Send a Link)
 
-- [ ] **Task 1.1: Twilio setup** — Purchase phone number, configure SMS webhook → `/api/ingest`
-- [x] **Task 1.2: Ingestion worker** — `POST /api/ingest` parses SMS for URLs, detects source type, stores in Supabase, returns TwiML confirmation
-- [x] **Task 1.3: Web form** (pulled from Phase 6) — `POST /api/submit` + `/submit` page for pasting links from a browser
+- [x] **Task 1.1: Twilio setup** — Using WhatsApp Sandbox (number: +14155238886). Webhook configured to `https://battlecat.ai/api/ingest`.
+- [x] **Task 1.2: Ingestion worker** — `POST /api/ingest` parses WhatsApp/SMS for URLs, detects source type, stores in Supabase, triggers processing via `after()`, returns TwiML confirmation
+- [x] **Task 1.3: Web form** — `POST /api/submit` + `/submit` page for pasting links from a browser
 
 ### Phase 2: Content Extraction
 
 - [x] **Task 2.1: Article extractor** — Jina Reader API with optional API key auth
-- [x] **Task 2.2: TikTok extractor** — yt-dlp extracts audio stream URL → Deepgram Nova-3 transcribes spoken words
+- [x] **Task 2.2: TikTok extractor** — tikwm.com cloud API → Deepgram Nova-3 transcription → Jina Reader fallback
 - [x] **Task 2.3: Tweet extractor** — Jina Reader first, fxtwitter.com proxy fallback. Normalizes x.com URLs.
-- [x] **Task 2.4a: YouTube extractor** — Three strategies: yt-dlp subtitles (VTT → plain text parser) → Deepgram audio transcription → Jina Reader page content
+- [x] **Task 2.4a: YouTube extractor** — youtube-transcript npm package → Jina Reader fallback
 - [x] **Task 2.4b: PDF extractor** — pdf-parse v2 (PDFParse class) — downloads PDF, extracts text + metadata (title, author, pages)
 - [x] **Task 2.4c: LinkedIn extractor** — Jina Reader for public articles, Google cache fallback for /pulse/ articles. Clear error with paste-as-note workaround.
 
@@ -290,24 +296,27 @@ The system should also tag content with:
 
 - [x] **Task 4.1: Core pages** — Home (hero, framework cards, latest tutorials, stats), Tutorial detail, Level pages (L0–L4), Level-up view, Learning paths (L0→L4 timeline), Browse/filter, Search, Submit, Bookmarks
 - [x] **Task 4.2: Features** — Bookmarks (localStorage), Share (Web Share API + clipboard), Filters (level, relation, difficulty, topic), Progress tracking (completion + notes), Dark mode (class toggle + localStorage)
-- [x] **Task 4.3: Polish** — Mobile hamburger nav, custom 404, OG meta tags on layout, empty states on all pages
-- [ ] **Task 4.3: Remaining polish** — Per-page SEO titles, RSS feed, loading skeleton states
+- [x] **Task 4.3: Polish** — Mobile hamburger nav, custom 404, per-page SEO metadata, RSS feed (/feed.xml), loading skeletons, OG meta tags
 
 ### Phase 5: End-to-End Integration
 
-- [ ] Text a TikTok link from iPhone → see it arrive as a tutorial on battlecat.ai
-- [ ] Verify merge behavior with duplicate topics
-- [ ] Verify level classification accuracy
-- [ ] Tune prompts based on real results
+- [x] **Task 5.1: Supabase data layer** — `data/tutorials.ts` async module reads from Supabase with seed data fallback, deduplicates by slug
+- [x] **Task 5.2: API endpoint** — `/api/tutorials` serves tutorials + topics to client components
+- [x] **Task 5.3: Server pages wired** — Home, tutorial detail, level pages, learning paths all use async Supabase data layer with ISR (60s)
+- [x] **Task 5.4: Client pages wired** — Browse, search, bookmarks, level-up fetch from `/api/tutorials` on mount
+- [x] **Task 5.5: Processing pipeline** — Shared `lib/process-submission.ts` called via `after()` from submit/ingest routes. No self-referencing HTTP calls.
+- [ ] **Task 5.6: End-to-end testing** — Send TikTok via WhatsApp → verify extraction → verify tutorial appears on site
+- [ ] **Task 5.7: Prompt tuning** — Tune classification and generation prompts based on real results
 
 ### Phase 6: Expansion
 
-- [x] Web form on battlecat.ai ("Paste a link") — pulled forward
+- [x] Web form on battlecat.ai ("Paste a link")
 - [ ] iOS Shortcut as second ingestion method
-- [ ] Email ingestion (Cloudflare Email Workers)
+- [ ] Email ingestion
 - [ ] Newsletter / email digest (weekly)
 - [ ] Make site public — SEO, social sharing, open access
 - [ ] Admin dashboard for content moderation
+- [ ] SMS ingestion (requires 10DLC registration for US numbers)
 
 ---
 
@@ -371,42 +380,42 @@ Prompt direction for generating the abstract Battle Cat mark:
 - [ ] Logo + wordmark lockup
 - [ ] Favicon (16px, 32px, 192px, 512px)
 - [ ] OG share image (1200x630)
-- [ ] Color palette tokens (CSS custom properties + Tailwind config)
-- [ ] Typography scale (headings, body, captions, code)
-- [ ] Component styling guide (cards, badges, buttons, level indicators)
-- [ ] Dark mode variant
-- [ ] Loading / empty state illustrations (optional, Phase 4)
+- [x] Color palette tokens (CSS custom properties + Tailwind config)
+- [x] Typography scale (headings, body, captions, code)
+- [x] Component styling guide (cards, badges, buttons, level indicators)
+- [x] Dark mode variant
+- [x] Loading / empty state illustrations (skeleton components)
 
 ---
 
 ## Implementation Status
 
-Updated: January 2026
+Updated: January 31, 2026
 
 ### Phase 0: Foundation & Branding
 
 | Task | Status | Notes |
 |------|--------|-------|
 | 0.1 Create battlecat project | **Done** | Next.js 16, TypeScript, Tailwind CSS v4 |
-| 0.2 Brand identity | **Partial** | Color palette + tokens implemented. Logo, favicon, OG image still needed (design agent / Midjourney). |
-| 0.3 Point domain | **Pending** | Requires: GoDaddy nameservers → Cloudflare, Cloudflare Pages deployment |
+| 0.2 Brand identity | **Partial** | Color palette + tokens + dark mode implemented. Logo, favicon, OG image still needed (design agent / Midjourney). |
+| 0.3 Point domain | **Done** | GoDaddy A + CNAME → Vercel. battlecat.ai is live. |
 
 ### Phase 1: Ingestion
 
 | Task | Status | Notes |
 |------|--------|-------|
-| 1.1 Twilio setup | **Pending** | Requires: purchase phone number, configure SMS webhook |
-| 1.2 Ingestion worker | **Done** | `POST /api/ingest` — parses SMS, detects source type, stores submission |
-| Web form (Phase 6 pull-forward) | **Done** | `POST /api/submit` + `/submit` page — paste links from browser |
+| 1.1 Twilio/WhatsApp setup | **Done** | WhatsApp Sandbox (+14155238886), webhook → battlecat.ai/api/ingest |
+| 1.2 Ingestion worker | **Done** | `POST /api/ingest` — parses WhatsApp/SMS, detects source type, stores submission, processes via `after()` |
+| Web form | **Done** | `POST /api/submit` + `/submit` page — paste links from browser |
 
 ### Phase 2: Content Extraction
 
 | Task | Status | Notes |
 |------|--------|-------|
 | 2.1 Article extractor | **Done** | Jina Reader with optional API key auth |
-| 2.2 TikTok extractor | **Done** | yt-dlp audio stream → Deepgram Nova-3 transcription |
+| 2.2 TikTok extractor | **Done** | tikwm.com API → Deepgram Nova-3 transcription → Jina fallback |
 | 2.3 Tweet extractor | **Done** | Jina Reader → fxtwitter fallback |
-| 2.4a YouTube extractor | **Done** | yt-dlp subtitles (VTT parser) → Deepgram audio → Jina Reader |
+| 2.4a YouTube extractor | **Done** | youtube-transcript package → Jina Reader fallback |
 | 2.4b PDF extractor | **Done** | pdf-parse v2 (text + metadata) |
 | 2.4c LinkedIn extractor | **Done** | Jina Reader for public articles, Google cache fallback |
 
@@ -437,35 +446,52 @@ Updated: January 2026
 | 4.2 Dark mode | **Done** | Class-based toggle with localStorage persistence |
 | 4.3 Mobile responsive | **Done** | Hamburger menu, full-screen overlay, route-aware |
 | 4.3 Custom 404 | **Done** | Branded not-found page |
-| 4.3 SEO meta tags | **Partial** | OG tags on layout, per-page titles pending |
-| 4.3 RSS feed | **Pending** | |
+| 4.3 Per-page SEO metadata | **Done** | Metadata in layout files for all pages |
+| 4.3 RSS feed | **Done** | /feed.xml route |
+| 4.3 Loading skeletons | **Done** | Skeleton components for all page types |
 
 ### Phase 5: End-to-End Integration
 
 | Task | Status | Notes |
 |------|--------|-------|
-| Live SMS → tutorial pipeline | **Pending** | Requires: Supabase project + Twilio phone number |
-| Merge behavior testing | **Pending** | Requires live pipeline |
-| Prompt tuning | **Pending** | Requires live pipeline |
+| Supabase data layer | **Done** | `data/tutorials.ts` async module + seed data fallback |
+| API endpoint | **Done** | `/api/tutorials` for client components |
+| Server pages wired to Supabase | **Done** | ISR with 60s revalidation |
+| Client pages wired to API | **Done** | Browse, search, bookmarks, level-up fetch from API |
+| Processing pipeline | **Done** | Shared `lib/process-submission.ts` + `after()` API |
+| Live end-to-end test | **Pending** | Awaiting merge + redeploy of pipeline fix |
+| Prompt tuning | **Pending** | Requires live pipeline results |
 
 ### Phase 6: Expansion
 
 | Task | Status | Notes |
 |------|--------|-------|
-| Web form ingestion | **Done** | Pulled forward — /submit page + /api/submit endpoint |
+| Web form ingestion | **Done** | /submit page + /api/submit endpoint |
 | iOS Shortcut | **Pending** | |
 | Email ingestion | **Pending** | |
 | Newsletter / digest | **Pending** | |
 | Make site public | **Pending** | |
 | Admin dashboard | **Pending** | |
 
-### What Requires Manual Setup
+### What Requires Manual Action
 
-These tasks cannot be automated and require account access:
+1. **Logo / visual assets** — Use Midjourney, DALL-E, or designer with the brand brief above
+2. **Merge pipeline fix PR** — Merge the latest PR to deploy the `after()` processing fix
+3. **End-to-end test** — Send a TikTok link via WhatsApp or web form, verify it appears as a tutorial
+4. **Rotate API keys** — All keys (Supabase, Anthropic, Deepgram, Twilio) were exposed during development session and should be rotated
+5. **10DLC registration** (optional) — Required if you want to add SMS ingestion alongside WhatsApp
 
-1. **Supabase** — Create project at supabase.com → run `battlecat/src/db/schema.sql` → copy keys to `.env.local`
-2. **Deepgram** — Sign up at deepgram.com → copy API key → `DEEPGRAM_API_KEY`
-3. **Twilio** — Purchase phone number → configure SMS webhook to `https://battlecat.ai/api/ingest`
-4. **Domain** — GoDaddy: change nameservers to Cloudflare → Cloudflare: add battlecat.ai → Cloudflare Pages deployment
-5. **yt-dlp** — Install on deployment server (`pip install yt-dlp`) for TikTok/YouTube audio extraction
-6. **Logo / visual assets** — Use Midjourney, DALL-E, or designer with the brand brief above
+### Environment Variables (Vercel)
+
+All of these are configured in Vercel project settings:
+
+| Variable | Description |
+|----------|-------------|
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase publishable key |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase secret/service role key |
+| `ANTHROPIC_API_KEY` | Anthropic Claude API key |
+| `DEEPGRAM_API_KEY` | Deepgram API key (audio transcription) |
+| `TWILIO_ACCOUNT_SID` | Twilio account SID |
+| `TWILIO_AUTH_TOKEN` | Twilio auth token |
+| `TWILIO_PHONE_NUMBER` | Twilio WhatsApp number (+14155238886) |
