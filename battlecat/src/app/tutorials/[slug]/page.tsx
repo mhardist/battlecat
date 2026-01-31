@@ -100,9 +100,6 @@ export default async function TutorialPage({ params }: Props) {
               Synthesized from {tutorial.source_count} sources
             </span>
           )}
-          {!tutorial.is_stale && (
-            <MossManBadge tutorialId={tutorial.id} isStale={false} interactive size="sm" />
-          )}
         </div>
 
         <h1 className="text-3xl sm:text-4xl font-bold leading-tight tracking-tight">
@@ -133,6 +130,7 @@ export default async function TutorialPage({ params }: Props) {
         tutorialId={tutorial.id}
         tutorialTitle={tutorial.title}
         tutorialSlug={tutorial.slug}
+        isStale={tutorial.is_stale}
       />
 
       {/* Body — rendered markdown */}
