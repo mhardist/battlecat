@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getLevel, getAllLevels, TRANSITIONS } from "@/config/levels";
 import { MaturityLevel } from "@/types";
-import { getTutorialsByLevel, getLevelUpTutorials } from "@/data/seed-tutorials";
+import { getTutorialsByLevel, getLevelUpTutorials } from "@/data/tutorials";
 
 interface Props {
   params: Promise<{ level: string }>;
@@ -35,8 +35,8 @@ export default async function LevelPage({ params }: Props) {
   const level = getLevel(levelNum);
   const transitionTo = TRANSITIONS.find((t) => t.from === levelNum);
   const transitionFrom = TRANSITIONS.find((t) => t.to === levelNum);
-  const tutorials = getTutorialsByLevel(levelNum);
-  const levelUpTutorials = getLevelUpTutorials(levelNum);
+  const tutorials = await getTutorialsByLevel(levelNum);
+  const levelUpTutorials = await getLevelUpTutorials(levelNum);
 
   return (
     <div className="space-y-8">

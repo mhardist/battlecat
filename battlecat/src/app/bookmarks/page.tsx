@@ -1,13 +1,22 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useBookmarks } from "@/hooks/useBookmarks";
 import { TutorialCard } from "@/components/TutorialCard";
-import { getAllTutorials } from "@/data/seed-tutorials";
+import { getAllTutorials as getSeedTutorials } from "@/data/seed-tutorials";
+import { Tutorial } from "@/types";
 
 export default function BookmarksPage() {
   const { bookmarks, toggle, isBookmarked, loaded } = useBookmarks();
-  const allTutorials = getAllTutorials();
+  const [allTutorials, setAllTutorials] = useState<Tutorial[]>(getSeedTutorials());
+
+  useEffect(() => {
+    fetch("/api/tutorials")
+      .then((r) => r.json())
+      .then((data) => { if (data.tutorials) setAllTutorials(data.tutorials); })
+      .catch(console.error);
+  }, []);
   const bookmarkedTutorials = allTutorials.filter((t) => bookmarks.has(t.id));
 
   if (!loaded) {
