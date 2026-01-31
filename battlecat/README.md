@@ -42,6 +42,7 @@ src/
 │   │   └── tutorials/
 │   │       ├── route.ts         # Tutorial data API for client components
 │   │       └── [id]/stale/      # Toggle stale/outdated status (Moss Man)
+│   │   └── research-tools/       # Research agent API — Claude-powered tool discovery
 │   ├── achievements/            # Rewards page — achievement gallery + Power Tier
 │   ├── bookmarks/               # Saved tutorials view
 │   ├── browse/                  # Filterable tutorial grid
@@ -61,6 +62,8 @@ src/
 │   ├── AchievementProvider.tsx  # Context: global achievement tracking + Sorceress modal
 │   ├── DarkModeToggle.tsx       # Light/dark mode toggle with localStorage
 │   ├── FilterBar.tsx            # Level, relation, and difficulty filters
+│   ├── HotNews.tsx              # Homepage "Hot in AI" section (3 items, expand to 8)
+│   ├── ToolsTimeline.tsx        # Collapsible tools timeline (time-bucketed, significance-based)
 │   ├── LevelBadge.tsx           # Colored level badge component
 │   ├── MobileNav.tsx            # Hamburger menu for mobile
 │   ├── MossManBadge.tsx         # Stale/outdated marker (database-backed, Moss Man SVG)
@@ -77,8 +80,9 @@ src/
 │   ├── brand.ts                 # Color palette, brand tokens
 │   ├── levels.ts                # AI Maturity Framework level definitions
 │   ├── quiz.ts                  # 6-question quiz, scoring, level result descriptions
-│   ├── tool-icons.ts            # SVG icon paths for 14 AI tools
-│   └── tools.ts                 # AI tools database (launch dates, milestones, URLs)
+│   ├── hot-news.ts              # Curated Hot News items (8 articles)
+│   ├── tool-icons.ts            # SVG icon paths for 28 AI tools
+│   └── tools.ts                 # AI tools database (28 tools, 100+ milestones, significance ratings)
 ├── data/
 │   ├── seed-tutorials.ts        # 10 seed tutorials (L0-L4) for development
 │   └── tutorials.ts             # Async Supabase data layer with seed fallback
@@ -95,6 +99,7 @@ src/
 │   ├── generate-image.ts        # Together AI FLUX: content-relevant hero images
 │   ├── markdown.ts              # Markdown → HTML rendering
 │   ├── process-submission.ts    # Processing pipeline (extract → AI → store → image)
+│   ├── research-agent.ts        # Claude-powered AI tool release discovery
 │   └── supabase.ts              # Lazy-initialized Supabase clients
 └── types/
     └── index.ts                 # TypeScript type definitions
@@ -132,13 +137,14 @@ The `after()` API ensures the Vercel function stays alive after the HTTP respons
 ## Features
 
 ### Website
-- **Tutorials-first home page** — Latest tutorials grid, live stats bar, framework overview
-- **AI tools directory** — Timeline view, per-level tool cards, tutorial counts
+- **Tutorials-first home page** — Latest tutorials grid, Hot News section, live stats bar, framework overview
+- **AI tools directory** — Collapsible timeline (28 tools, 100+ milestones), per-level tool cards, tutorial counts, significance-based display
 - **Interactive quiz wizard** — 6-question assessment to find your AI maturity level, with animated transitions and localStorage persistence
 - **Achievement/reward system** — 20 He-Man themed achievements, Points of Power, 5 power tiers (Apprentice → Master of the Universe), Sorceress of Castle Grayskull celebration modal
 - **Orko rating system** — 0–5 Orko character ratings on every tutorial (localStorage)
 - **Moss Man stale markers** — Click-to-toggle "outdated" indicator, persisted to Supabase database (not localStorage)
-- **Tool badges** — Inline SVG icons for 14 AI tools on tutorial cards and detail pages
+- **Hot News homepage section** — 3 curated AI articles with teasers, expandable to 8, config-driven
+- **Tool badges** — Inline SVG icons for 28 AI tools on tutorial cards and detail pages
 - Search across all content with level filtering
 - Filter by level, topic, tag, relation, difficulty
 - Learning path view (L0→L4 timeline)
@@ -160,6 +166,7 @@ The `after()` API ensures the Vercel function stays alive after the HTTP respons
 - Twilio WhatsApp webhook endpoint (`/api/ingest`)
 - Web form submission endpoint (`/api/submit`)
 - Stale toggle API (`/api/tutorials/[id]/stale`) — database-backed
+- Research agent API (`/api/research-tools?since=YYYY-MM`) — Claude-powered tool discovery
 - Processing pipeline (`lib/process-submission.ts`) using `after()` API
 - Tutorial data API (`/api/tutorials`) for client components
 - Supabase async data layer with seed data fallback

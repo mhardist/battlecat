@@ -36,7 +36,7 @@ Everything below is implemented and deployed:
 - **Level Pages (L0-L4)** — Level info + tutorials at each level
 - **Learning Paths** — Visual L0→L4 timeline
 - **Level-Up Quiz** — 6-question interactive wizard to find your AI maturity level
-- **AI Tools Directory** — Timeline view, per-level tool cards, tutorial counts
+- **AI Tools Directory** — Collapsible timeline (28 tools, 100+ milestones), per-level tool cards, tutorial counts, significance-based display
 - **Achievements/Rewards** — 20 He-Man themed achievements, Points of Power, power tiers
 - **Bookmarks** — Saved tutorials (localStorage)
 - **Submit** — Web form to paste links
@@ -48,6 +48,24 @@ Everything below is implemented and deployed:
 | **Orko** | Tutorial ratings (0–5 Orkos) | SVG icon, localStorage, interactive hover |
 | **Moss Man** | Stale/outdated article marker | SVG icon, database-backed toggle via API |
 | **Sorceress of Castle Grayskull** | Achievement celebration | SVG portrait, modal with themed messages |
+
+### Homepage Hot News
+- "Hot in AI" section between hero and latest tutorials
+- 3 curated articles shown by default, expandable to 8
+- Config-driven via `config/hot-news.ts` — manually updated
+- Each item: date, level indicator, tool name, headline, teaser, optional URL
+
+### Collapsible Tools Timeline
+- Time-bucketed: "This Month", "Last 3 Months", "Last 6 Months", "Last Year", "Older"
+- Reverse chronological — newest first
+- Significance-based filtering (high items always visible, medium/low toggle with "Show more")
+- Level filter pills and search input
+- Expandable individual milestones with level info and tutorial counts
+
+### Research Agent API
+- `GET /api/research-tools?since=YYYY-MM` — Claude-powered discovery of new AI tool releases
+- Returns structured `ToolRelease[]` data (name, event, date, level, significance, url)
+- Designed for future Vercel Cron daily automation
 
 ### Client Features
 - Bookmark/favorite (localStorage)
@@ -120,7 +138,9 @@ A personal analytics page showing:
 - `battlecat/src/config/achievements.ts` — 20 achievements, power tiers, point definitions
 - `battlecat/src/config/levels.ts` — Level definitions and colors
 - `battlecat/src/config/quiz.ts` — Quiz questions and scoring
-- `battlecat/src/config/tools.ts` — AI tools database (launch dates, milestones)
+- `battlecat/src/config/tools.ts` — AI tools database (28 tools, 100+ milestones, significance ratings)
+- `battlecat/src/config/hot-news.ts` — Curated Hot News items (8 articles)
+- `battlecat/src/config/tool-icons.ts` — SVG icon paths for 28 AI tools
 - `battlecat/src/config/brand.ts` — Brand tokens
 - `battlecat/src/types/index.ts` — TypeScript types
 - `battlecat/src/data/tutorials.ts` — Supabase data layer
@@ -128,3 +148,7 @@ A personal analytics page showing:
 - `battlecat/src/components/SorceressModal.tsx` — Achievement celebration modal
 - `battlecat/src/components/MossManBadge.tsx` — Stale marker component
 - `battlecat/src/components/OrkoRating.tsx` — Rating component
+- `battlecat/src/components/HotNews.tsx` — Hot News section (3 items, expandable to 8)
+- `battlecat/src/components/ToolsTimeline.tsx` — Collapsible tools timeline
+- `battlecat/src/lib/research-agent.ts` — Claude-powered research agent for tool discovery
+- `battlecat/src/app/api/research-tools/route.ts` — Research agent API endpoint

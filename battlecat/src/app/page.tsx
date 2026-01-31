@@ -3,6 +3,8 @@ import Link from "next/link";
 import { getAllLevels } from "@/config/levels";
 import { getAllTutorials } from "@/data/tutorials";
 import { TutorialCard } from "@/components/TutorialCard";
+import { HotNews } from "@/components/HotNews";
+import { HOT_NEWS } from "@/config/hot-news";
 
 export const revalidate = 60;
 
@@ -50,6 +52,23 @@ export default async function Home() {
             Submit a Link
           </Link>
         </div>
+      </section>
+
+      {/* Hot News — latest AI releases */}
+      <section className="space-y-4">
+        <div className="flex items-baseline justify-between">
+          <h2 className="text-2xl font-bold flex items-center gap-2">
+            <span className="inline-block h-2.5 w-2.5 rounded-full bg-red-500 animate-pulse" />
+            Hot in AI
+          </h2>
+          <Link
+            href="/tools"
+            className="text-sm font-medium text-bc-primary hover:underline"
+          >
+            Full timeline &rarr;
+          </Link>
+        </div>
+        <HotNews items={HOT_NEWS} levels={levels} />
       </section>
 
       {/* Latest Tutorials — the main content */}
