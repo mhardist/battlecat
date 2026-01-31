@@ -7,16 +7,24 @@ import { researchToolReleases } from "@/lib/research-agent";
  * Triggers the AI research agent to discover new tool releases.
  * Returns structured data matching the AITool milestone format.
  *
+ * If `since` is omitted, defaults to 7 days ago (dynamic "past week").
  * Can be called manually or via Vercel Cron for daily automated research.
  */
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const since = searchParams.get("since");
+  let since = searchParams.get("since");
 
-  if (!since || !/^\d{4}-\d{2}$/.test(since)) {
+  // Default to 7 days ago if not provided
+  if (!since) {
+    const weekAgo = new Date();
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    since = weekAgo.toISOString().slice(0, 7); // YYYY-MM
+  }
+
+  if (!/^\d{4}-\d{2}$/.test(since)) {
     return NextResponse.json(
       {
-        error: "Missing or invalid 'since' parameter. Use format: YYYY-MM",
+        error: "Invalid 'since' parameter. Use format: YYYY-MM",
         example: "/api/research-tools?since=2025-06",
       },
       { status: 400 }

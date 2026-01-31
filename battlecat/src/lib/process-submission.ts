@@ -1,7 +1,11 @@
 import { extractContent } from "@/lib/extract";
-import { generateTutorial, mergeTutorial } from "@/lib/ai";
+import { generateTutorial, mergeTutorial, generateHotNewsBlurb } from "@/lib/ai";
 import { generateTutorialImage } from "@/lib/generate-image";
 import { createServerClient } from "@/lib/supabase";
+
+interface ProcessOptions {
+  hotNews?: boolean;
+}
 
 /**
  * Process a submission end-to-end: extract content, classify, generate tutorial.
@@ -9,8 +13,11 @@ import { createServerClient } from "@/lib/supabase";
  * This is the shared processing core used by /api/submit, /api/ingest,
  * and /api/process. It runs inline (no self-referencing HTTP calls) so
  * it works reliably on Vercel serverless via `after()`.
+ *
+ * Options:
+ * - hotNews: if true, generates a hot news headline/teaser and flags the tutorial
  */
-export async function processSubmission(submissionId: string): Promise<{
+export async function processSubmission(submissionId: string, options?: ProcessOptions): Promise<{
   success: boolean;
   tutorial_id?: string;
   merged?: boolean;
@@ -80,15 +87,22 @@ export async function processSubmission(submissionId: string): Promise<{
         submission.url,
       );
 
+      const mergeUpdate: Record<string, unknown> = {
+        body: merged.body,
+        summary: merged.summary,
+        action_items: merged.action_items,
+        source_urls: [...existing.source_urls, submission.url],
+        source_count: existing.source_count + 1,
+      };
+
+      // If flagged as hot news, update the existing tutorial too
+      if (options?.hotNews) {
+        mergeUpdate.is_hot_news = true;
+      }
+
       const { error: updateError } = await supabase
         .from("tutorials")
-        .update({
-          body: merged.body,
-          summary: merged.summary,
-          action_items: merged.action_items,
-          source_urls: [...existing.source_urls, submission.url],
-          source_count: existing.source_count + 1,
-        })
+        .update(mergeUpdate)
         .eq("id", existing.id);
 
       if (updateError) throw updateError;
@@ -153,6 +167,37 @@ export async function processSubmission(submissionId: string): Promise<{
       }
     } catch (imgErr) {
       console.error(`[process] Image generation failed (non-fatal):`, imgErr);
+    }
+
+    // 8b. Generate hot news headline/teaser if flagged
+    if (options?.hotNews) {
+      try {
+        const blurb = await generateHotNewsBlurb(
+          generated.title,
+          generated.summary,
+          generated.classification.tools_mentioned,
+        );
+        await supabase
+          .from("tutorials")
+          .update({
+            is_hot_news: true,
+            hot_news_headline: blurb.headline,
+            hot_news_teaser: blurb.teaser,
+          })
+          .eq("id", tutorialId);
+        console.log(`[process] Flagged as hot news: ${tutorialId}`);
+      } catch (hotErr) {
+        // Still flag as hot news even if blurb generation fails — use title/summary as fallback
+        console.error(`[process] Hot news blurb failed (using fallback):`, hotErr);
+        await supabase
+          .from("tutorials")
+          .update({
+            is_hot_news: true,
+            hot_news_headline: generated.title,
+            hot_news_teaser: generated.summary.slice(0, 200),
+          })
+          .eq("id", tutorialId);
+      }
     }
 
     // 9. Link source to tutorial

@@ -45,6 +45,30 @@ export async function getAllTutorials(): Promise<Tutorial[]> {
   );
 }
 
+/** Fetch tutorials flagged as hot news, most recent first */
+export async function getHotNewsTutorials(): Promise<Tutorial[]> {
+  const supabase = await getSupabase();
+  if (!supabase) return [];
+
+  try {
+    const { data, error } = await supabase
+      .from("tutorials")
+      .select("*")
+      .eq("is_published", true)
+      .eq("is_hot_news", true)
+      .order("created_at", { ascending: false })
+      .limit(8);
+
+    if (!error && data) {
+      return data as Tutorial[];
+    }
+  } catch (err) {
+    console.error("Failed to fetch hot news tutorials:", err);
+  }
+
+  return [];
+}
+
 /** Fetch tutorials by maturity level */
 export async function getTutorialsByLevel(level: number): Promise<Tutorial[]> {
   const all = await getAllTutorials();

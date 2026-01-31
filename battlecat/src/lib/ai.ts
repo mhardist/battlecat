@@ -194,3 +194,42 @@ Respond ONLY with valid JSON:
     message.content[0].type === "text" ? message.content[0].text : "";
   return parseJSON(text);
 }
+
+/**
+ * Generate a hot news headline and teaser for a tutorial flagged as hot news.
+ * Returns a punchy, news-style headline and a 1-2 sentence teaser.
+ */
+export async function generateHotNewsBlurb(
+  title: string,
+  summary: string,
+  toolsMentioned: string[],
+): Promise<{ headline: string; teaser: string }> {
+  const message = await anthropic.messages.create({
+    model: "claude-sonnet-4-20250514",
+    max_tokens: 512,
+    messages: [
+      {
+        role: "user",
+        content: `Write a hot news headline and teaser for an AI news item.
+
+TUTORIAL TITLE: ${title}
+SUMMARY: ${summary}
+TOOLS: ${toolsMentioned.join(", ")}
+
+The headline should be punchy and specific — like a tech news headline (TechCrunch, The Verge style).
+Focus on FUNCTIONALITY — what was launched, what it does, what's new. Not funding or hype.
+The teaser should be 1-2 sentences that expand on the headline with the key capability or impact.
+
+Respond ONLY with valid JSON:
+{
+  "headline": "<news-style headline, max 80 chars>",
+  "teaser": "<1-2 sentence teaser, max 200 chars>"
+}`,
+      },
+    ],
+  });
+
+  const text2 =
+    message.content[0].type === "text" ? message.content[0].text : "";
+  return parseJSON(text2);
+}
