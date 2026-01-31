@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getLevel, getAllLevels, TRANSITIONS } from "@/config/levels";
@@ -10,6 +11,17 @@ interface Props {
 
 export function generateStaticParams() {
   return getAllLevels().map((l) => ({ level: String(l.level) }));
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { level: levelParam } = await params;
+  const levelNum = parseInt(levelParam, 10) as MaturityLevel;
+  const level = getLevel(levelNum);
+  if (!level) return { title: "Level Not Found — Battle Cat AI" };
+  return {
+    title: `Level ${level.level}: ${level.you_role} → ${level.ai_role} — Battle Cat AI`,
+    description: level.description,
+  };
 }
 
 export default async function LevelPage({ params }: Props) {

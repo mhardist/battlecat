@@ -49,61 +49,86 @@ async function extractArticle(url: string): Promise<string> {
 }
 
 // ---------------------------------------------------------------------------
-// TikTok Extraction (yt-dlp audio → Deepgram transcription)
+// TikTok Extraction (cloud API → Deepgram transcription)
 // ---------------------------------------------------------------------------
 
 /**
  * Extract spoken words from a TikTok video.
  *
  * Pipeline:
- * 1. yt-dlp extracts direct audio stream URL
- * 2. Deepgram Nova transcribes the audio
+ * 1. tikwm.com API returns direct video/audio stream URLs
+ * 2. Deepgram Nova-3 transcribes the audio from the stream URL
  *
- * Requires: yt-dlp on the server, DEEPGRAM_API_KEY env var
+ * No local binaries needed — works on Vercel serverless.
+ * Requires: DEEPGRAM_API_KEY env var
  */
 async function extractTikTok(url: string): Promise<string> {
-  const audioUrl = await getAudioUrl(url);
-  const transcript = await transcribeWithDeepgram(audioUrl);
+  // Strategy 1: tikwm API → Deepgram
+  try {
+    const videoInfo = await getTikTokVideoInfo(url);
+    const streamUrl = videoInfo.hdplay || videoInfo.play;
 
-  if (!transcript || transcript.trim().length < 20) {
-    throw new Error("TikTok transcription returned insufficient content");
+    if (streamUrl) {
+      const transcript = await transcribeWithDeepgram(
+        streamUrl.startsWith("http") ? streamUrl : `https://www.tikwm.com${streamUrl}`
+      );
+
+      if (transcript && transcript.trim().length > 20) {
+        const title = videoInfo.title || "";
+        const author = videoInfo.author?.nickname || "";
+        const header = [title && `Title: ${title}`, author && `Author: ${author}`]
+          .filter(Boolean)
+          .join("\n");
+
+        return `[TikTok Transcription]\n${header}\n\n${transcript}`;
+      }
+    }
+  } catch (err) {
+    console.error("TikTok tikwm strategy failed:", err);
   }
 
-  return `[TikTok Transcription]\n\n${transcript}`;
+  // Strategy 2: Jina Reader for page content (descriptions, comments)
+  try {
+    const text = await extractArticle(url);
+    if (text && text.trim().length > 50) {
+      return `[TikTok Page Content]\n\n${text}`;
+    }
+  } catch {
+    // Jina failed
+  }
+
+  throw new Error(
+    "Could not extract TikTok content. The video may be private or unavailable."
+  );
 }
 
-/**
- * Use yt-dlp to get the direct audio stream URL from a video page.
- */
-async function getAudioUrl(videoUrl: string): Promise<string> {
-  const { exec } = await import("child_process");
-  const { promisify } = await import("util");
-  const execAsync = promisify(exec);
+/** Fetch TikTok video metadata and stream URLs via tikwm.com API */
+async function getTikTokVideoInfo(
+  url: string
+): Promise<{
+  title?: string;
+  play?: string;
+  hdplay?: string;
+  music?: string;
+  author?: { nickname?: string };
+}> {
+  const apiUrl = `https://www.tikwm.com/api/?url=${encodeURIComponent(url)}&hd=1`;
+  const response = await fetch(apiUrl, {
+    method: "GET",
+    headers: { Accept: "application/json" },
+  });
 
-  try {
-    // Try audio-only first
-    const { stdout } = await execAsync(
-      `yt-dlp --no-warnings --no-check-certificates -f "ba" --get-url "${videoUrl}"`,
-      { timeout: 30000 }
-    );
-    const directUrl = stdout.trim();
-    if (directUrl) return directUrl;
-  } catch {
-    // audio-only format not available
+  if (!response.ok) {
+    throw new Error(`tikwm API request failed: ${response.status}`);
   }
 
-  // Fallback: best available format
-  const { exec: exec2 } = await import("child_process");
-  const execAsync2 = promisify(exec2);
-  const { stdout } = await execAsync2(
-    `yt-dlp --no-warnings --no-check-certificates --get-url "${videoUrl}"`,
-    { timeout: 30000 }
-  );
-  const directUrl = stdout.trim().split("\n")[0];
-  if (!directUrl) {
-    throw new Error("yt-dlp could not extract a stream URL");
+  const json = await response.json();
+
+  if (json.code !== 0 || !json.data) {
+    throw new Error(`tikwm API error: ${json.msg || "unknown"}`);
   }
-  return directUrl;
+
+  return json.data;
 }
 
 /**
@@ -192,33 +217,33 @@ async function extractTweet(url: string): Promise<string> {
  * Extract YouTube video transcript.
  *
  * Strategy (priority order):
- * 1. yt-dlp subtitles (auto-generated or manual)
- * 2. Audio extraction + Deepgram transcription
- * 3. Jina Reader page content as last resort
+ * 1. youtube-transcript package (YouTube's internal transcript API)
+ * 2. Jina Reader page content as fallback
+ *
+ * No local binaries needed — works on Vercel serverless.
  */
 async function extractYouTube(url: string): Promise<string> {
   const normalizedUrl = normalizeYouTubeUrl(url);
+  const videoId = extractYouTubeVideoId(normalizedUrl);
 
-  // Strategy 1: subtitles via yt-dlp
-  try {
-    const subtitles = await getYouTubeSubtitles(normalizedUrl);
-    if (subtitles && subtitles.trim().length > 50) {
-      return `[YouTube Transcript]\n\n${subtitles}`;
+  // Strategy 1: YouTube transcript API
+  if (videoId) {
+    try {
+      const { YoutubeTranscript } = await import("youtube-transcript");
+      const segments = await YoutubeTranscript.fetchTranscript(videoId);
+
+      if (segments && segments.length > 0) {
+        const text = segments.map((s) => s.text).join(" ");
+        if (text.trim().length > 50) {
+          return `[YouTube Transcript]\n\n${text}`;
+        }
+      }
+    } catch (err) {
+      console.error("YouTube transcript fetch failed:", err);
     }
-  } catch {
-    // no subtitles
   }
 
-  // Strategy 2: audio transcription via Deepgram
-  try {
-    const audioUrl = await getAudioUrl(normalizedUrl);
-    const transcript = await transcribeWithDeepgram(audioUrl);
-    return `[YouTube Transcription]\n\n${transcript}`;
-  } catch {
-    // audio extraction failed
-  }
-
-  // Strategy 3: Jina Reader page content
+  // Strategy 2: Jina Reader page content
   try {
     const text = await extractArticle(normalizedUrl);
     if (text && text.trim().length > 100) {
@@ -229,8 +254,8 @@ async function extractYouTube(url: string): Promise<string> {
   }
 
   throw new Error(
-    "Could not extract YouTube content. Ensure yt-dlp is installed " +
-    "or set DEEPGRAM_API_KEY for audio transcription."
+    "Could not extract YouTube content. The video may not have " +
+    "transcripts available and page content was insufficient."
   );
 }
 
@@ -249,72 +274,14 @@ function normalizeYouTubeUrl(url: string): string {
   return url;
 }
 
-/** Get YouTube subtitles via yt-dlp, parsed from VTT format */
-async function getYouTubeSubtitles(url: string): Promise<string> {
-  const { exec } = await import("child_process");
-  const { promisify } = await import("util");
-  const { readFileSync, unlinkSync, existsSync } = await import("fs");
-  const { tmpdir } = await import("os");
-  const { join } = await import("path");
-  const execAsync = promisify(exec);
-
-  const tmpPath = join(tmpdir(), `bc-yt-${Date.now()}`);
-
+/** Extract YouTube video ID from a normalized URL */
+function extractYouTubeVideoId(url: string): string | null {
   try {
-    await execAsync(
-      `yt-dlp --no-warnings --no-check-certificates ` +
-      `--write-auto-sub --sub-lang en --sub-format vtt ` +
-      `--skip-download -o "${tmpPath}" "${url}"`,
-      { timeout: 30000 }
-    );
-
-    const vttPath = `${tmpPath}.en.vtt`;
-    if (!existsSync(vttPath)) {
-      throw new Error("No subtitle file generated");
-    }
-
-    const vttContent = readFileSync(vttPath, "utf-8");
-    unlinkSync(vttPath);
-    return parseVtt(vttContent);
-  } catch (err) {
-    // Clean up temp files on failure
-    try {
-      const { existsSync: ex, unlinkSync: ul } = await import("fs");
-      const vttPath = `${tmpPath}.en.vtt`;
-      if (ex(vttPath)) ul(vttPath);
-    } catch { /* ignore cleanup errors */ }
-    throw err;
+    const parsed = new URL(url);
+    return parsed.searchParams.get("v");
+  } catch {
+    return null;
   }
-}
-
-/** Parse VTT subtitle format into plain text, deduplicating consecutive lines */
-function parseVtt(vtt: string): string {
-  const lines = vtt.split("\n");
-  const textLines: string[] = [];
-  let lastLine = "";
-
-  for (const line of lines) {
-    const trimmed = line.trim();
-    if (
-      !trimmed ||
-      trimmed === "WEBVTT" ||
-      trimmed.includes("-->") ||
-      trimmed.startsWith("Kind:") ||
-      trimmed.startsWith("Language:") ||
-      trimmed.startsWith("NOTE") ||
-      /^\d+$/.test(trimmed)
-    ) {
-      continue;
-    }
-
-    const cleaned = trimmed.replace(/<[^>]+>/g, "").trim();
-    if (cleaned && cleaned !== lastLine) {
-      textLines.push(cleaned);
-      lastLine = cleaned;
-    }
-  }
-
-  return textLines.join(" ");
 }
 
 // ---------------------------------------------------------------------------

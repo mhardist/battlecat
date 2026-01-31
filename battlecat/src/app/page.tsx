@@ -1,6 +1,13 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { getAllLevels } from "@/config/levels";
 import { getAllTutorials } from "@/data/seed-tutorials";
+
+export const metadata: Metadata = {
+  title: "Battle Cat AI — Level Up Your AI Skills",
+  description:
+    "Forward links from your phone. Get organized, step-by-step AI tutorials mapped to the AI Maturity Framework (L0 Asker → L4 Architect).",
+};
 
 const LEVEL_COLORS: Record<number, string> = {
   0: "border-l-bc-level-0",
