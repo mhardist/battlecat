@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getLevel } from "@/config/levels";
-import { getTutorialBySlug, getAllTutorials } from "@/data/seed-tutorials";
+import { getTutorialBySlug, getAllTutorials as getAllTutorialsAsync } from "@/data/tutorials";
+import { getAllTutorials as getSeedTutorials } from "@/data/seed-tutorials";
 import { LevelBadge } from "@/components/LevelBadge";
 import { TutorialActions } from "@/components/TutorialActions";
 
@@ -10,14 +11,17 @@ interface Props {
   params: Promise<{ slug: string }>;
 }
 
-/** Pre-generate paths for seed tutorials */
+/** Revalidate every 60 seconds so new tutorials appear quickly */
+export const revalidate = 60;
+
+/** Pre-generate paths for seed tutorials; new Supabase tutorials render on demand */
 export function generateStaticParams() {
-  return getAllTutorials().map((t) => ({ slug: t.slug }));
+  return getSeedTutorials().map((t) => ({ slug: t.slug }));
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const tutorial = getTutorialBySlug(slug);
+  const tutorial = await getTutorialBySlug(slug);
   if (!tutorial) return { title: "Tutorial Not Found — Battle Cat AI" };
   const level = getLevel(tutorial.maturity_level);
   return {
@@ -35,7 +39,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function TutorialPage({ params }: Props) {
   const { slug } = await params;
-  const tutorial = getTutorialBySlug(slug);
+  const tutorial = await getTutorialBySlug(slug);
 
   if (!tutorial) {
     notFound();

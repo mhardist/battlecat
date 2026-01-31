@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getAllLevels } from "@/config/levels";
-import { getAllTutorials } from "@/data/seed-tutorials";
+import { getAllTutorials } from "@/data/tutorials";
+
+export const revalidate = 60;
 
 export const metadata: Metadata = {
   title: "Battle Cat AI — Level Up Your AI Skills",
@@ -17,9 +19,9 @@ const LEVEL_COLORS: Record<number, string> = {
   4: "border-l-bc-level-4",
 };
 
-export default function Home() {
+export default async function Home() {
   const levels = getAllLevels();
-  const tutorials = getAllTutorials().slice(0, 4);
+  const tutorials = (await getAllTutorials()).slice(0, 4);
 
   return (
     <div className="space-y-12">

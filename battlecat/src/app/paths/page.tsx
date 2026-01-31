@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getAllLevels, TRANSITIONS } from "@/config/levels";
-import { getTutorialsByLevel, getLevelUpTutorials } from "@/data/seed-tutorials";
+import { getTutorialsByLevel, getLevelUpTutorials } from "@/data/tutorials";
 
 export const metadata: Metadata = {
   title: "Learning Paths — Battle Cat AI",
@@ -9,8 +9,20 @@ export const metadata: Metadata = {
     "Follow the AI Maturity Framework from L0 (Asker) to L4 (Architect). See what to learn at each level and what it takes to level up.",
 };
 
-export default function LearningPathsPage() {
+export const revalidate = 60;
+
+export default async function LearningPathsPage() {
   const levels = getAllLevels();
+
+  // Prefetch all tutorial data (async Supabase calls)
+  const tutorialsByLevel = await Promise.all(
+    levels.map(async (level) => ({
+      level: level.level,
+      tutorials: await getTutorialsByLevel(level.level),
+      levelUpTutorials: await getLevelUpTutorials(level.level),
+    }))
+  );
+  const dataMap = new Map(tutorialsByLevel.map((d) => [d.level, d]));
 
   return (
     <div className="space-y-10">
@@ -25,8 +37,8 @@ export default function LearningPathsPage() {
       {/* Visual Path */}
       <div className="space-y-0">
         {levels.map((level) => {
-          const tutorials = getTutorialsByLevel(level.level);
-          const levelUpTutorials = getLevelUpTutorials(level.level);
+          const tutorials = dataMap.get(level.level)?.tutorials ?? [];
+          const levelUpTutorials = dataMap.get(level.level)?.levelUpTutorials ?? [];
           const transition = TRANSITIONS.find((t) => t.from === level.level);
           const totalCount = tutorials.length;
 

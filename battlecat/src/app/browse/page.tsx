@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { MaturityLevel, Tutorial } from "@/types";
-import { getAllTutorials, getAllTopics } from "@/data/seed-tutorials";
+import { getAllTutorials as getSeedTutorials, getAllTopics as getSeedTopics } from "@/data/seed-tutorials";
 import { TutorialCard } from "@/components/TutorialCard";
 import { FilterBar } from "@/components/FilterBar";
 import { useBookmarks } from "@/hooks/useBookmarks";
@@ -14,8 +14,20 @@ export default function BrowsePage() {
   const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
   const { toggle, isBookmarked } = useBookmarks();
 
-  const allTutorials = getAllTutorials();
-  const allTopics = getAllTopics();
+  // Start with seed data, then fetch from API (includes Supabase tutorials)
+  const [allTutorials, setAllTutorials] = useState<Tutorial[]>(getSeedTutorials());
+  const [allTopics, setAllTopics] = useState<string[]>(getSeedTopics());
+
+  useEffect(() => {
+    fetch("/api/tutorials")
+      .then((r) => r.json())
+      .then((data) => { if (data.tutorials) setAllTutorials(data.tutorials); })
+      .catch(console.error);
+    fetch("/api/tutorials?topics=true")
+      .then((r) => r.json())
+      .then((data) => { if (data.topics) setAllTopics(data.topics); })
+      .catch(console.error);
+  }, []);
 
   const filtered = useMemo(() => {
     let result: Tutorial[] = allTutorials;

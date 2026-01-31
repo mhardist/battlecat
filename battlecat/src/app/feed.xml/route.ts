@@ -1,10 +1,12 @@
-import { getAllTutorials } from "@/data/seed-tutorials";
+import { getAllTutorials } from "@/data/tutorials";
 import { getLevel } from "@/config/levels";
+
+export const dynamic = "force-dynamic";
 
 const SITE_URL = "https://battlecat.ai";
 
 export async function GET() {
-  const tutorials = getAllTutorials().sort(
+  const tutorials = (await getAllTutorials()).sort(
     (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
   );
 

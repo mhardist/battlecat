@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { getAllLevels, TRANSITIONS } from "@/config/levels";
-import { MaturityLevel } from "@/types";
-import { getTutorialsByLevel, getLevelUpTutorials } from "@/data/seed-tutorials";
+import { MaturityLevel, Tutorial } from "@/types";
+import { getTutorialsByLevel as getSeedByLevel, getLevelUpTutorials as getSeedLevelUp } from "@/data/seed-tutorials";
 import { TutorialCard } from "@/components/TutorialCard";
 import { useBookmarks } from "@/hooks/useBookmarks";
 
@@ -24,10 +24,22 @@ export default function LevelUpPage() {
   const transition = TRANSITIONS.find((t) => t.from === currentLevel);
   const nextLevel = currentLevel < 4 ? (currentLevel + 1) as MaturityLevel : null;
 
-  const levelUpContent = getLevelUpTutorials(currentLevel);
-  const practiceContent = getTutorialsByLevel(currentLevel).filter(
-    (t) => t.level_relation === "level-practice"
-  );
+  // Start with seed data, fetch from API on mount
+  const [allTutorials, setAllTutorials] = useState<Tutorial[]>([]);
+
+  useEffect(() => {
+    fetch("/api/tutorials")
+      .then((r) => r.json())
+      .then((data) => { if (data.tutorials) setAllTutorials(data.tutorials); })
+      .catch(console.error);
+  }, []);
+
+  const levelUpContent = allTutorials.length > 0
+    ? allTutorials.filter((t) => t.level_relation === "level-up" && t.maturity_level === currentLevel)
+    : getSeedLevelUp(currentLevel);
+  const practiceContent = allTutorials.length > 0
+    ? allTutorials.filter((t) => t.maturity_level === currentLevel && t.level_relation === "level-practice")
+    : getSeedByLevel(currentLevel).filter((t) => t.level_relation === "level-practice");
 
   return (
     <div className="space-y-10">

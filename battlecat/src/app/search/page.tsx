@@ -1,27 +1,48 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { searchTutorials, getAllTutorials } from "@/data/seed-tutorials";
+import { useState, useEffect, useCallback } from "react";
+import { getAllTutorials as getSeedTutorials } from "@/data/seed-tutorials";
 import { TutorialCard } from "@/components/TutorialCard";
 import { useBookmarks } from "@/hooks/useBookmarks";
-import { MaturityLevel } from "@/types";
+import { MaturityLevel, Tutorial } from "@/types";
 
 export default function SearchPage() {
   const [query, setQuery] = useState("");
   const [levelFilter, setLevelFilter] = useState<MaturityLevel | null>(null);
   const { toggle, isBookmarked } = useBookmarks();
+  const [allTutorials, setAllTutorials] = useState<Tutorial[]>(getSeedTutorials());
 
-  const results = useMemo(() => {
-    let tutorials = query.trim()
-      ? searchTutorials(query.trim())
-      : getAllTutorials();
+  // Fetch from API on mount to include Supabase tutorials
+  useEffect(() => {
+    fetch("/api/tutorials")
+      .then((r) => r.json())
+      .then((data) => { if (data.tutorials) setAllTutorials(data.tutorials); })
+      .catch(console.error);
+  }, []);
 
+  // Search: use API if query exists, otherwise filter locally
+  const [results, setResults] = useState<Tutorial[]>(allTutorials);
+
+  const doSearch = useCallback(() => {
+    let tutorials = allTutorials;
+    if (query.trim()) {
+      const q = query.trim().toLowerCase();
+      tutorials = tutorials.filter(
+        (t) =>
+          t.title.toLowerCase().includes(q) ||
+          t.summary.toLowerCase().includes(q) ||
+          t.topics.some((topic) => topic.toLowerCase().includes(q)) ||
+          t.tags.some((tag) => tag.toLowerCase().includes(q)) ||
+          t.tools_mentioned.some((tool) => tool.toLowerCase().includes(q))
+      );
+    }
     if (levelFilter !== null) {
       tutorials = tutorials.filter((t) => t.maturity_level === levelFilter);
     }
+    setResults(tutorials);
+  }, [query, levelFilter, allTutorials]);
 
-    return tutorials;
-  }, [query, levelFilter]);
+  useEffect(() => { doSearch(); }, [doSearch]);
 
   return (
     <div className="space-y-6">
