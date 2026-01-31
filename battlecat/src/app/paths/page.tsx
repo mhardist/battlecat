@@ -4,7 +4,7 @@ import { getAllLevels, TRANSITIONS } from "@/config/levels";
 import { getTutorialsByLevel, getLevelUpTutorials } from "@/data/tutorials";
 
 export const metadata: Metadata = {
-  title: "Learning Paths — Battle Cat AI",
+  title: "Learning Paths — Battlecat AI",
   description:
     "Follow the AI Maturity Framework from L0 (Asker) to L4 (Architect). See what to learn at each level and what it takes to level up.",
 };

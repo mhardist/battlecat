@@ -1,202 +1,285 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { getAllLevels, TRANSITIONS } from "@/config/levels";
-import { MaturityLevel, Tutorial } from "@/types";
-import { getTutorialsByLevel as getSeedByLevel, getLevelUpTutorials as getSeedLevelUp } from "@/data/seed-tutorials";
+import { getAllLevels } from "@/config/levels";
+import { Tutorial } from "@/types";
 import { TutorialCard } from "@/components/TutorialCard";
 import { useBookmarks } from "@/hooks/useBookmarks";
+import {
+  QUIZ_QUESTIONS,
+  LEVEL_RESULTS,
+  calculateLevel,
+} from "@/config/quiz";
 
-const LEVEL_DESCRIPTIONS: Record<number, string> = {
-  0: "You ask questions and get answers. No memory, no context.",
-  1: "AI knows who you are and adapts to your situation.",
-  2: "You describe what you want, AI builds it.",
-  3: "AI works autonomously. You supervise outcomes, not keystrokes.",
-  4: "You design systems of agents. The org chart includes AI.",
-};
+type QuizState = "welcome" | "quiz" | "results";
+
+const STORAGE_KEY = "battlecat-quiz-level";
 
 export default function LevelUpPage() {
-  const [currentLevel, setCurrentLevel] = useState<MaturityLevel>(0);
   const levels = getAllLevels();
   const { toggle, isBookmarked } = useBookmarks();
 
-  const transition = TRANSITIONS.find((t) => t.from === currentLevel);
-  const nextLevel = currentLevel < 4 ? (currentLevel + 1) as MaturityLevel : null;
-
-  // Start with seed data, fetch from API on mount
+  const [quizState, setQuizState] = useState<QuizState>("welcome");
+  const [currentQ, setCurrentQ] = useState(0);
+  const [answers, setAnswers] = useState<Record<string, number>>({});
+  const [resultLevel, setResultLevel] = useState<number>(0);
+  const [fadeClass, setFadeClass] = useState("opacity-100");
   const [allTutorials, setAllTutorials] = useState<Tutorial[]>([]);
 
+  // Check for stored result
+  useEffect(() => {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored !== null) {
+      const level = parseInt(stored, 10);
+      if (!isNaN(level) && level >= 0 && level <= 4) {
+        setResultLevel(level);
+        setQuizState("results");
+      }
+    }
+  }, []);
+
+  // Fetch tutorials for results page
   useEffect(() => {
     fetch("/api/tutorials")
       .then((r) => r.json())
-      .then((data) => { if (data.tutorials) setAllTutorials(data.tutorials); })
+      .then((data) => {
+        if (data.tutorials) setAllTutorials(data.tutorials);
+      })
       .catch(console.error);
   }, []);
 
-  const levelUpContent = allTutorials.length > 0
-    ? allTutorials.filter((t) => t.level_relation === "level-up" && t.maturity_level === currentLevel)
-    : getSeedLevelUp(currentLevel);
-  const practiceContent = allTutorials.length > 0
-    ? allTutorials.filter((t) => t.maturity_level === currentLevel && t.level_relation === "level-practice")
-    : getSeedByLevel(currentLevel).filter((t) => t.level_relation === "level-practice");
+  const handleAnswer = useCallback(
+    (level: number) => {
+      const question = QUIZ_QUESTIONS[currentQ];
+      const newAnswers = { ...answers, [question.id]: level };
+      setAnswers(newAnswers);
 
-  return (
-    <div className="space-y-10">
-      {/* Header */}
-      <section className="space-y-3">
-        <h1 className="text-3xl font-bold">
-          Level Up{" "}
-          <span className="text-bc-secondary">Your AI Skills</span>
-        </h1>
-        <p className="text-bc-text-secondary">
-          Select where you are today. We&apos;ll show you what to learn next.
-        </p>
-      </section>
+      if (currentQ < QUIZ_QUESTIONS.length - 1) {
+        // Fade transition
+        setFadeClass("opacity-0 translate-x-4");
+        setTimeout(() => {
+          setCurrentQ((q) => q + 1);
+          setFadeClass("opacity-0 -translate-x-4");
+          setTimeout(() => setFadeClass("opacity-100 translate-x-0"), 50);
+        }, 200);
+      } else {
+        // Calculate result
+        const level = calculateLevel(newAnswers);
+        setResultLevel(level);
+        localStorage.setItem(STORAGE_KEY, String(level));
+        setFadeClass("opacity-0");
+        setTimeout(() => {
+          setQuizState("results");
+          setFadeClass("opacity-100");
+        }, 300);
+      }
+    },
+    [currentQ, answers]
+  );
 
-      {/* Level Selector */}
-      <section>
-        <p className="mb-3 text-sm font-medium text-bc-text-secondary">
-          I&apos;m currently at:
-        </p>
-        <div className="flex flex-wrap gap-2">
-          {levels.map((level) => (
-            <button
-              key={level.level}
-              onClick={() => setCurrentLevel(level.level)}
-              className="rounded-lg px-4 py-3 text-left transition-all"
-              style={
-                currentLevel === level.level
-                  ? {
-                      backgroundColor: level.color,
-                      color: "white",
-                      boxShadow: `0 4px 14px ${level.color}40`,
-                    }
-                  : {
-                      border: `2px solid ${level.color}30`,
-                      color: level.color,
-                    }
-              }
+  const startQuiz = () => {
+    setAnswers({});
+    setCurrentQ(0);
+    setFadeClass("opacity-0");
+    setTimeout(() => {
+      setQuizState("quiz");
+      setFadeClass("opacity-100");
+    }, 200);
+  };
+
+  const retakeQuiz = () => {
+    localStorage.removeItem(STORAGE_KEY);
+    setAnswers({});
+    setCurrentQ(0);
+    setFadeClass("opacity-0");
+    setTimeout(() => {
+      setQuizState("welcome");
+      setFadeClass("opacity-100");
+    }, 200);
+  };
+
+  const handleShare = () => {
+    const result = LEVEL_RESULTS[resultLevel];
+    const text = `${result.headline} on the AI Maturity Framework! Find your level at battlecat.ai/level-up`;
+    if (navigator.share) {
+      navigator.share({ text, url: "https://battlecat.ai/level-up" }).catch(() => {});
+    } else {
+      navigator.clipboard.writeText(text).then(() => {
+        alert("Copied to clipboard!");
+      });
+    }
+  };
+
+  // Filter tutorials for results
+  const levelUpTutorials = allTutorials.filter(
+    (t) => t.level_relation === "level-up" && t.maturity_level === resultLevel
+  );
+  const practiceTutorials = allTutorials.filter(
+    (t) => t.maturity_level === resultLevel && t.level_relation === "level-practice"
+  );
+
+  const levelColor = levels[resultLevel]?.color || "#9CA3AF";
+  const result = LEVEL_RESULTS[resultLevel];
+
+  // ─── Welcome Screen ───
+  if (quizState === "welcome") {
+    return (
+      <div
+        className={`flex min-h-[60vh] flex-col items-center justify-center text-center space-y-8 transition-all duration-300 ${fadeClass}`}
+      >
+        <div className="space-y-4">
+          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-bc-primary/10">
+            <svg
+              className="h-10 w-10 text-bc-primary"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={1.5}
             >
-              <div className="text-sm font-bold">L{level.level}</div>
-              <div className="text-xs opacity-80">{level.name}</div>
-            </button>
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z"
+              />
+            </svg>
+          </div>
+          <h1 className="text-3xl sm:text-4xl font-bold">
+            Where are you on your{" "}
+            <span className="text-bc-primary">AI journey?</span>
+          </h1>
+          <p className="mx-auto max-w-md text-lg text-bc-text-secondary">
+            Take 60 seconds to find out. Six questions, instant results, personalized
+            tutorial recommendations.
+          </p>
+        </div>
+
+        <button
+          onClick={startQuiz}
+          className="rounded-xl bg-bc-primary px-8 py-4 text-lg font-semibold text-white transition-all hover:shadow-lg hover:shadow-bc-primary/25 hover:-translate-y-0.5"
+        >
+          Find My Level
+        </button>
+
+        {/* Level preview */}
+        <div className="flex gap-2 mt-4">
+          {levels.map((l) => (
+            <div
+              key={l.level}
+              className="flex flex-col items-center gap-1"
+            >
+              <div
+                className="h-2 w-8 rounded-full"
+                style={{ backgroundColor: l.color }}
+              />
+              <span className="text-[10px] text-bc-text-secondary">
+                L{l.level}
+              </span>
+            </div>
           ))}
         </div>
-      </section>
+      </div>
+    );
+  }
 
-      {/* Current Level Summary */}
-      <section
-        className="rounded-xl border-l-4 bg-bc-surface p-6"
-        style={{ borderLeftColor: levels[currentLevel].color }}
-      >
-        <div className="flex items-baseline gap-3">
-          <span
-            className="text-3xl font-bold"
-            style={{ color: levels[currentLevel].color }}
-          >
-            L{currentLevel}
-          </span>
-          <h2 className="text-xl font-bold">
-            You: {levels[currentLevel].you_role} &rarr; AI:{" "}
-            {levels[currentLevel].ai_role}
-          </h2>
-        </div>
-        <p className="mt-2 text-bc-text-secondary">
-          {LEVEL_DESCRIPTIONS[currentLevel]}
-        </p>
-      </section>
+  // ─── Quiz Questions ───
+  if (quizState === "quiz") {
+    const question = QUIZ_QUESTIONS[currentQ];
+    const progress = ((currentQ + 1) / QUIZ_QUESTIONS.length) * 100;
 
-      {/* What It Takes to Level Up */}
-      {transition && nextLevel !== null && (
-        <section className="space-y-4">
-          <h2 className="text-2xl font-bold">
-            To Reach{" "}
-            <span style={{ color: levels[nextLevel].color }}>
-              L{nextLevel} ({levels[nextLevel].name})
+    return (
+      <div className="mx-auto max-w-2xl space-y-8">
+        {/* Progress bar */}
+        <div className="space-y-2">
+          <div className="flex justify-between text-sm text-bc-text-secondary">
+            <span>
+              Question {currentQ + 1} of {QUIZ_QUESTIONS.length}
             </span>
-          </h2>
-
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="rounded-lg border border-bc-border bg-bc-surface p-5">
-              <div className="text-sm font-medium text-bc-text-secondary">
-                You&apos;ll give up
-              </div>
-              <div className="mt-1 text-lg font-semibold text-red-500">
-                {transition.give_up}
-              </div>
-              <p className="mt-2 text-sm text-bc-text-secondary">
-                {currentLevel === 0 &&
-                  "You'll stop being anonymous. The AI needs to know who you are."}
-                {currentLevel === 1 &&
-                  "You'll stop doing everything yourself. Let AI build for you."}
-                {currentLevel === 2 &&
-                  "You'll stop directing every step. Let AI figure out the how."}
-                {currentLevel === 3 &&
-                  "You'll stop supervising individual agents. Design the system instead."}
-              </p>
-            </div>
-            <div className="rounded-lg border border-bc-border bg-bc-surface p-5">
-              <div className="text-sm font-medium text-bc-text-secondary">
-                You&apos;ll invest
-              </div>
-              <div className="mt-1 text-lg font-semibold text-bc-primary">
-                {transition.invest}
-              </div>
-              <p className="mt-2 text-sm text-bc-text-secondary">
-                {currentLevel === 0 &&
-                  "Time upfront to teach the AI your context, preferences, and constraints."}
-                {currentLevel === 1 &&
-                  "Clarity on what you want built — clear specs, clear outcomes."}
-                {currentLevel === 2 &&
-                  "Trust. Willingness to let an agent make decisions and ship code."}
-                {currentLevel === 3 &&
-                  "Systems thinking. The ability to decompose complex problems into agent-sized pieces."}
-              </p>
-            </div>
+            <span>{Math.round(progress)}%</span>
           </div>
+          <div className="h-2 rounded-full bg-bc-border/50 overflow-hidden">
+            <div
+              className="h-full rounded-full bg-bc-primary transition-all duration-500 ease-out"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+        </div>
 
-          {(currentLevel === 2 || currentLevel === 3) && (
-            <div className="rounded-lg border-2 border-bc-secondary/30 bg-bc-secondary/5 p-5">
-              <h3 className="font-bold text-bc-secondary">
-                {currentLevel === 2
-                  ? "The Technical Cliff"
-                  : "The Gate"}
-              </h3>
-              <p className="mt-1 text-sm text-bc-text-secondary">
-                {currentLevel === 2
-                  ? "The L2 → L3 transition is the hardest. Prototyping tools can't ship production code. You need to understand security, authentication, data integrity, and error handling — even if an AI agent does the actual work."
-                  : "L3 → L4 is gated. You can't orchestrate agents you don't trust. Master security (auth, encryption, access control), reliability (testing, monitoring, rollback), and systems thinking (architecture, scaling, integration) first."}
-              </p>
-            </div>
-          )}
-        </section>
-      )}
+        {/* Question */}
+        <div
+          className={`space-y-6 transition-all duration-200 ease-out ${fadeClass}`}
+        >
+          <h2 className="text-2xl font-bold">{question.question}</h2>
 
-      {currentLevel === 4 && (
-        <section className="rounded-xl border border-bc-secondary bg-bc-secondary/5 p-6 text-center">
-          <div className="text-3xl">&#x1F451;</div>
-          <h2 className="mt-2 text-xl font-bold text-bc-secondary">
-            You&apos;re at the top
-          </h2>
-          <p className="mt-1 text-bc-text-secondary">
-            L4 Architect — you design AI organizations. Keep deepening your
-            orchestration skills with the tutorials below.
-          </p>
-        </section>
-      )}
+          <div className="grid gap-3">
+            {question.answers.map((answer, i) => (
+              <button
+                key={i}
+                onClick={() => handleAnswer(answer.level)}
+                className="group w-full text-left rounded-xl border-2 border-bc-border bg-bc-surface p-4 transition-all hover:border-bc-primary hover:shadow-md hover:-translate-y-0.5"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border-2 border-bc-border text-sm font-bold text-bc-text-secondary group-hover:border-bc-primary group-hover:text-bc-primary transition-colors">
+                    {String.fromCharCode(65 + i)}
+                  </span>
+                  <span className="font-medium group-hover:text-bc-primary transition-colors">
+                    {answer.text}
+                  </span>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── Results ───
+  return (
+    <div
+      className={`space-y-10 transition-all duration-300 ${fadeClass}`}
+    >
+      {/* Result header */}
+      <section className="text-center space-y-4">
+        <div
+          className="mx-auto flex h-24 w-24 items-center justify-center rounded-2xl text-3xl font-bold text-white"
+          style={{ backgroundColor: levelColor }}
+        >
+          L{resultLevel}
+        </div>
+        <h1 className="text-3xl sm:text-4xl font-bold">{result.headline}</h1>
+        <p className="mx-auto max-w-xl text-lg text-bc-text-secondary">
+          {result.description}
+        </p>
+
+        {/* Actions */}
+        <div className="flex items-center justify-center gap-3 pt-2">
+          <button
+            onClick={handleShare}
+            className="rounded-lg bg-bc-primary px-5 py-2.5 font-semibold text-white transition-shadow hover:shadow-lg hover:shadow-bc-primary/25"
+          >
+            Share Your Level
+          </button>
+          <button
+            onClick={retakeQuiz}
+            className="rounded-lg border-2 border-bc-border px-5 py-2.5 font-semibold text-bc-text-secondary transition-colors hover:border-bc-primary hover:text-bc-primary"
+          >
+            Retake Quiz
+          </button>
+        </div>
+      </section>
 
       {/* Level-Up Tutorials */}
-      {levelUpContent.length > 0 && (
+      {levelUpTutorials.length > 0 && (
         <section className="space-y-4">
           <h2 className="text-xl font-bold">
-            Level-Up Tutorials{" "}
+            Learn Next{" "}
             <span className="text-sm font-normal text-bc-text-secondary">
-              (teach you to reach L{currentLevel + 1})
+              (how to reach L{Math.min(resultLevel + 1, 4)})
             </span>
           </h2>
-          <div className="grid gap-3">
-            {levelUpContent.map((tutorial) => (
+          <div className="grid gap-4 sm:grid-cols-2">
+            {levelUpTutorials.map((tutorial) => (
               <TutorialCard
                 key={tutorial.id}
                 tutorial={tutorial}
@@ -209,14 +292,14 @@ export default function LevelUpPage() {
         </section>
       )}
 
-      {/* Practice at Current Level */}
-      {practiceContent.length > 0 && (
+      {/* Practice Tutorials */}
+      {practiceTutorials.length > 0 && (
         <section className="space-y-4">
           <h2 className="text-xl font-bold">
-            Deepen Your L{currentLevel} Skills
+            Deepen Your L{resultLevel} Skills
           </h2>
-          <div className="grid gap-3">
-            {practiceContent.map((tutorial) => (
+          <div className="grid gap-4 sm:grid-cols-2">
+            {practiceTutorials.map((tutorial) => (
               <TutorialCard
                 key={tutorial.id}
                 tutorial={tutorial}
@@ -229,22 +312,28 @@ export default function LevelUpPage() {
         </section>
       )}
 
-      {levelUpContent.length === 0 && practiceContent.length === 0 && (
-        <section className="rounded-lg border border-dashed border-bc-border bg-bc-surface p-12 text-center">
+      {levelUpTutorials.length === 0 && practiceTutorials.length === 0 && (
+        <section className="rounded-xl border border-dashed border-bc-border bg-bc-surface p-12 text-center">
           <p className="text-bc-text-secondary">
-            No L{currentLevel} tutorials yet. Forward some content about{" "}
-            {levels[currentLevel].tools.join(", ")} to populate this view.
+            No L{resultLevel} tutorials yet. Forward content about{" "}
+            {levels[resultLevel]?.tools.join(", ")} to populate this view.
           </p>
+          <Link
+            href="/submit"
+            className="mt-4 inline-block rounded-lg bg-bc-primary px-5 py-2.5 font-semibold text-white"
+          >
+            Submit a Link
+          </Link>
         </section>
       )}
 
-      {/* Quick link */}
-      <div className="text-center">
+      {/* Level details link */}
+      <div className="text-center pt-4">
         <Link
-          href={`/levels/${currentLevel}`}
+          href={`/levels/${resultLevel}`}
           className="text-sm text-bc-primary hover:underline"
         >
-          View all L{currentLevel} details &rarr;
+          View all L{resultLevel} details &rarr;
         </Link>
       </div>
     </div>

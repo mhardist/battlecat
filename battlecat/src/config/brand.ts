@@ -1,6 +1,6 @@
-/** Battle Cat AI brand configuration */
+/** Battlecat AI brand configuration */
 export const BRAND = {
-  name: "Battle Cat",
+  name: "Battlecat",
   domain: "battlecat.ai",
   tagline: "Level up your AI skills",
   description:
@@ -8,7 +8,7 @@ export const BRAND = {
 } as const;
 
 /**
- * Battle Cat color palette
+ * Battlecat color palette
  * Forest teal + amber gold, Material Design principles
  */
 export const COLORS = {

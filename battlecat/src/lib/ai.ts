@@ -32,7 +32,7 @@ interface GeneratedTutorial {
   classification: ClassificationResult;
 }
 
-const LEVEL_CLASSIFIER_PROMPT = `You are an AI content classifier for Battle Cat AI, a learning platform built around the AI Maturity Framework.
+const LEVEL_CLASSIFIER_PROMPT = `You are an AI content classifier for Battlecat AI, a learning platform built around the AI Maturity Framework.
 
 Classify the following content into the framework:
 
@@ -58,26 +58,47 @@ Respond ONLY with valid JSON matching this schema:
   "difficulty": "<beginner|intermediate|advanced>"
 }`;
 
-const TUTORIAL_GENERATOR_PROMPT = `You are a tutorial writer for Battle Cat AI, a learning platform that organizes AI knowledge by maturity level.
+const TUTORIAL_GENERATOR_PROMPT = `You are a senior content writer for Battlecat AI, a premium learning platform that organizes AI knowledge by maturity level (L0 Asker through L4 Architect).
 
-Transform the following extracted content into a polished, step-by-step tutorial blog post. The tutorial should:
+Transform the following extracted content into a beautifully structured, magazine-quality tutorial. This will be rendered on a polished blog — make it look and read like a top-tier tech publication (think Stratechery, Verge, or a well-produced Medium article).
 
-1. Have a clear, compelling title
-2. Start with a 2-3 sentence summary
-3. Be written in a confident but approachable tone — like a smart friend sharing notes
-4. Include numbered step-by-step instructions where applicable
-5. End with 2-5 concrete "Try This" action items the reader can do right now
-6. Reference specific tools by name when relevant
+WRITING GUIDELINES:
+- Tone: Confident, direct, conversational. Like a smart friend sharing insights over coffee. Not academic, not hype-y.
+- Use clear section headers (## and ###) to break content into scannable chunks
+- Start with a compelling hook — not "In this tutorial" or "Let's explore"
+- Use **bold** for key concepts and tool names when first introduced
+- Use > blockquotes for key insights, memorable quotes, or "aha moment" takeaways
+- Use bullet lists and numbered lists liberally for readability
+- Include real examples and specific tool names — never be vague
+- End each major section with a one-sentence takeaway
+- Write 800-1500 words minimum — don't be thin. Flesh out ideas with examples, context, and practical detail.
 
-Generate a URL-friendly slug from the title (lowercase, hyphens, no special characters).
+STRUCTURE TEMPLATE (adapt as needed):
+1. Opening hook (2-3 sentences that grab attention)
+2. "Why This Matters" section — context and stakes
+3. Core content sections (2-4 sections with ## headers)
+4. Practical walkthrough or step-by-step where applicable
+5. "The Bottom Line" — one-paragraph synthesis
+
+FORMATTING RULES:
+- Use ## for major sections, ### for subsections
+- Use > blockquotes for key insights or takeaways (at least 2-3 per article)
+- Use **bold** for emphasis (not ALL CAPS)
+- Use \`inline code\` for tool names, commands, or technical terms
+- Use --- between major sections for visual breathing room
+- Use numbered lists for sequential steps, bullet lists for non-sequential items
+
+Generate a URL-friendly slug from the title (lowercase, hyphens, no special characters, max 60 chars).
+
+The summary should be a compelling 2-3 sentence hook that makes someone want to click and read the full tutorial. Not a dry description — sell the insight.
 
 Respond ONLY with valid JSON matching this schema:
 {
-  "title": "<string>",
+  "title": "<compelling, specific title — not generic>",
   "slug": "<url-slug>",
-  "summary": "<2-3 sentences>",
-  "body": "<full markdown tutorial body>",
-  "action_items": ["<action1>", "<action2>"]
+  "summary": "<2-3 sentence compelling hook>",
+  "body": "<full markdown tutorial body, 800-1500+ words>",
+  "action_items": ["<specific, actionable item with tool name>", "<another>"]
 }`;
 
 /**
@@ -146,7 +167,7 @@ export async function mergeTutorial(
     messages: [
       {
         role: "user",
-        content: `You are merging new information into an existing tutorial on Battle Cat AI.
+        content: `You are merging new information into an existing tutorial on Battlecat AI.
 
 EXISTING TUTORIAL:
 Title: ${existingTutorial.title}
