@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getLevel } from "@/config/levels";
@@ -12,6 +13,24 @@ interface Props {
 /** Pre-generate paths for seed tutorials */
 export function generateStaticParams() {
   return getAllTutorials().map((t) => ({ slug: t.slug }));
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { slug } = await params;
+  const tutorial = getTutorialBySlug(slug);
+  if (!tutorial) return { title: "Tutorial Not Found — Battle Cat AI" };
+  const level = getLevel(tutorial.maturity_level);
+  return {
+    title: `${tutorial.title} — Battle Cat AI`,
+    description: tutorial.summary,
+    openGraph: {
+      title: tutorial.title,
+      description: tutorial.summary,
+      type: "article",
+      siteName: "Battle Cat AI",
+      tags: [...tutorial.topics, `L${tutorial.maturity_level} ${level?.you_role}`],
+    },
+  };
 }
 
 export default async function TutorialPage({ params }: Props) {
