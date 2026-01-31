@@ -5,6 +5,13 @@ const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY!,
 });
 
+/** Strip markdown code fences from Claude's response before JSON.parse */
+function parseJSON<T>(text: string): T {
+  // Remove ```json ... ``` or ``` ... ``` wrappers
+  const stripped = text.replace(/^```(?:json)?\s*\n?/i, "").replace(/\n?```\s*$/i, "");
+  return JSON.parse(stripped) as T;
+}
+
 /** Classification result from the AI level classifier */
 interface ClassificationResult {
   maturity_level: MaturityLevel;
@@ -92,7 +99,7 @@ export async function classifyContent(
 
   const text =
     message.content[0].type === "text" ? message.content[0].text : "";
-  return JSON.parse(text) as ClassificationResult;
+  return parseJSON<ClassificationResult>(text);
 }
 
 /**
@@ -119,7 +126,7 @@ export async function generateTutorial(
 
   const text =
     message.content[0].type === "text" ? message.content[0].text : "";
-  const tutorial = JSON.parse(text) as Omit<GeneratedTutorial, "classification">;
+  const tutorial = parseJSON<Omit<GeneratedTutorial, "classification">>(text);
 
   return { ...tutorial, classification };
 }
@@ -164,5 +171,5 @@ Respond ONLY with valid JSON:
 
   const text =
     message.content[0].type === "text" ? message.content[0].text : "";
-  return JSON.parse(text);
+  return parseJSON(text);
 }
