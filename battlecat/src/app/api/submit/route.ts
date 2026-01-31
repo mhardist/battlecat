@@ -17,7 +17,7 @@ export const maxDuration = 60;
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { url, note } = body as { url?: string; note?: string };
+    const { url, note, hot_news } = body as { url?: string; note?: string; hot_news?: boolean };
 
     if (!url || typeof url !== "string") {
       return NextResponse.json(
@@ -63,9 +63,10 @@ export async function POST(request: Request) {
 
     // Run processing after the response is sent.
     // after() keeps the Vercel function alive so processing completes.
+    const isHotNews = !!hot_news;
     after(async () => {
-      console.log(`[submit] Starting background processing for ${submission.id}`);
-      const result = await processSubmission(submission.id);
+      console.log(`[submit] Starting background processing for ${submission.id} (hot_news: ${isHotNews})`);
+      const result = await processSubmission(submission.id, { hotNews: isHotNews });
       console.log(`[submit] Processing result for ${submission.id}:`, result);
     });
 

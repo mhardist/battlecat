@@ -16,13 +16,13 @@ export const maxDuration = 60;
  * Body: { submission_id: string }
  */
 export async function POST(request: NextRequest) {
-  const { submission_id } = await request.json();
+  const { submission_id, hot_news } = await request.json();
 
   if (!submission_id) {
     return NextResponse.json({ error: "Missing submission_id" }, { status: 400 });
   }
 
-  const result = await processSubmission(submission_id);
+  const result = await processSubmission(submission_id, { hotNews: !!hot_news });
 
   if (!result.success) {
     return NextResponse.json(

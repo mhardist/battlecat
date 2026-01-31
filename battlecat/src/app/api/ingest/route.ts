@@ -49,6 +49,11 @@ export async function POST(request: NextRequest) {
   const url = urlMatch[0].replace(/[.,;:!?)]+$/, ""); // Strip trailing punctuation
   const sourceType = detectSourceType(url);
 
+  // Detect hot news flag: "HOT:" prefix before the URL
+  // e.g. "HOT: https://example.com/article" or "hot: check this out https://..."
+  const textBeforeUrl = body.slice(0, body.indexOf(url));
+  const isHotNews = /\bhot:/i.test(textBeforeUrl);
+
   // Store the submission
   const { createServerClient } = await import("@/lib/supabase");
   const supabase = createServerClient();
@@ -75,14 +80,15 @@ export async function POST(request: NextRequest) {
   // Run processing after the response is sent.
   // after() keeps the Vercel function alive so processing completes.
   after(async () => {
-    console.log(`[ingest] Starting background processing for ${submission.id}`);
-    const result = await processSubmission(submission.id);
+    console.log(`[ingest] Starting background processing for ${submission.id} (hot_news: ${isHotNews})`);
+    const result = await processSubmission(submission.id, { hotNews: isHotNews });
     console.log(`[ingest] Processing result for ${submission.id}:`, result);
   });
 
   const channel = isWhatsApp ? "WhatsApp" : "SMS";
+  const hotLabel = isHotNews ? " as Hot News" : "";
   return new NextResponse(
-    twiml(`Got it — processing your ${sourceType} link via ${channel}. You'll see it on battlecat.ai soon.`),
+    twiml(`Got it — processing your ${sourceType} link${hotLabel} via ${channel}. You'll see it on battlecat.ai soon.`),
     { headers: { "Content-Type": "text/xml" } },
   );
 }

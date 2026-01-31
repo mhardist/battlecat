@@ -62,6 +62,9 @@ export interface Tutorial {
   source_count: number;
   image_url: string | null;
   is_stale: boolean;
+  is_hot_news: boolean;
+  hot_news_headline: string | null;
+  hot_news_teaser: string | null;
   is_published: boolean;
   created_at: string;
   updated_at: string;

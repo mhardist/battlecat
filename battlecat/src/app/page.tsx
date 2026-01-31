@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getAllLevels } from "@/config/levels";
-import { getAllTutorials } from "@/data/tutorials";
+import { getAllTutorials, getHotNewsTutorials } from "@/data/tutorials";
 import { TutorialCard } from "@/components/TutorialCard";
 import { HotNews } from "@/components/HotNews";
+import type { NewsItem } from "@/components/HotNews";
 import { HOT_NEWS } from "@/config/hot-news";
 
 export const revalidate = 60;
@@ -18,6 +19,19 @@ export default async function Home() {
   const levels = getAllLevels();
   const allTutorials = await getAllTutorials();
   const latestTutorials = allTutorials.slice(0, 6);
+
+  // Build hot news: database items first, then fill with config items
+  const hotNewsTutorials = await getHotNewsTutorials();
+  const dbNewsItems: NewsItem[] = hotNewsTutorials.map((t) => ({
+    date: t.created_at.slice(0, 10),
+    headline: t.hot_news_headline || t.title,
+    teaser: t.hot_news_teaser || t.summary.slice(0, 200),
+    toolName: t.tools_mentioned[0] || "AI",
+    level: t.maturity_level,
+    url: `/tutorials/${t.slug}`,
+  }));
+  // Merge: DB items first, then config items to fill up to 8
+  const hotNewsItems = [...dbNewsItems, ...HOT_NEWS].slice(0, 8);
 
   // Stats
   const totalTutorials = allTutorials.length;
@@ -68,7 +82,7 @@ export default async function Home() {
             Full timeline &rarr;
           </Link>
         </div>
-        <HotNews items={HOT_NEWS} levels={levels} />
+        <HotNews items={hotNewsItems} levels={levels} />
       </section>
 
       {/* Latest Tutorials — the main content */}

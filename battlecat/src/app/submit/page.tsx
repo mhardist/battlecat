@@ -8,6 +8,7 @@ type SubmitState = "idle" | "submitting" | "success" | "error";
 export default function SubmitPage() {
   const [url, setUrl] = useState("");
   const [note, setNote] = useState("");
+  const [hotNews, setHotNews] = useState(false);
   const [state, setState] = useState<SubmitState>("idle");
   const [message, setMessage] = useState("");
   const { trackSubmission } = useAchievementContext();
@@ -33,7 +34,7 @@ export default function SubmitPage() {
       const res = await fetch("/api/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: url.trim(), note: note.trim() }),
+        body: JSON.stringify({ url: url.trim(), note: note.trim(), hot_news: hotNews }),
       });
 
       if (!res.ok) {
@@ -45,6 +46,7 @@ export default function SubmitPage() {
       trackSubmission();
       setUrl("");
       setNote("");
+      setHotNews(false);
 
       // Reset after a few seconds
       setTimeout(() => {
@@ -108,6 +110,31 @@ export default function SubmitPage() {
             className="w-full rounded-lg border border-bc-border bg-bc-surface px-4 py-3 outline-none transition-colors focus:border-bc-primary focus:ring-2 focus:ring-bc-primary/20"
           />
         </div>
+
+        {/* Hot News Toggle */}
+        <label className="flex items-center gap-3 cursor-pointer">
+          <button
+            type="button"
+            role="switch"
+            aria-checked={hotNews}
+            onClick={() => setHotNews(!hotNews)}
+            className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors ${
+              hotNews ? "bg-red-500" : "bg-bc-border"
+            }`}
+          >
+            <span
+              className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${
+                hotNews ? "translate-x-5" : "translate-x-0"
+              }`}
+            />
+          </button>
+          <span className="text-sm font-medium">
+            Flag as Hot News
+          </span>
+          {hotNews && (
+            <span className="inline-block h-2 w-2 rounded-full bg-red-500 animate-pulse" />
+          )}
+        </label>
 
         {/* Submit Button */}
         <button
@@ -180,7 +207,9 @@ export default function SubmitPage() {
       <div className="rounded-lg border border-bc-secondary/30 bg-bc-secondary/5 p-4 text-sm text-bc-text-secondary">
         <strong className="text-bc-secondary">Pro tip:</strong> You can also
         text links directly to your Battlecat phone number from your iPhone.
-        Same pipeline, faster workflow.
+        Same pipeline, faster workflow. Prefix with{" "}
+        <code className="rounded bg-bc-border/50 px-1.5 py-0.5 text-xs font-mono">HOT:</code>{" "}
+        to flag as hot news.
       </div>
     </div>
   );
