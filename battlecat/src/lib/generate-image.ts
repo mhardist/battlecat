@@ -1,11 +1,14 @@
 /**
- * Generate a hero image for a tutorial using Together AI's FLUX model.
+ * Generate a content-relevant hero image for a tutorial using Together AI's FLUX model.
+ * Produces infographic/mind-map style visuals that reflect the actual tutorial content.
  * Returns a URL to the generated image, or null if image generation is unavailable.
  */
 export async function generateTutorialImage(
   title: string,
   topics: string[],
   maturityLevel: number,
+  summary: string,
+  actionItems: string[],
 ): Promise<string | null> {
   const apiKey = process.env.TOGETHER_API_KEY;
   if (!apiKey) {
@@ -16,8 +19,12 @@ export async function generateTutorialImage(
   const levelNames = ["Asker", "Instructor", "Designer", "Supervisor", "Architect"];
   const levelName = levelNames[maturityLevel] || "AI";
 
-  // Create a prompt that generates a clean, modern illustration
-  const prompt = `Clean modern flat illustration for a tech blog article titled "${title}". Abstract geometric shapes, gradient colors, teal and amber gold accent colors. Topics: ${topics.slice(0, 3).join(", ")}. Professional, minimal, no text, no words, no letters. Clean white or dark background. Tech and AI themed. Editorial illustration style.`;
+  // Extract key concepts from the summary for visual representation
+  const keyPoints = actionItems.slice(0, 3).join("; ");
+  const topicList = topics.slice(0, 4).join(", ");
+
+  // Build a content-specific infographic prompt
+  const prompt = `Infographic-style illustration for an AI tutorial: "${title}". Visual mind map showing the relationship between: ${topicList}. Key concepts visualized: ${summary.slice(0, 120)}. Style: clean flat-design infographic with connected nodes, icons representing ${topicList}, flowchart arrows, and labeled diagram sections. Color palette: teal (#14B8A6), amber gold (#F59E0B), with a dark navy (#0f172a) background. The image should look like a polished slide from a tech presentation — diagrammatic, structured, with visual hierarchy. NO readable text or words — use abstract icons, shapes, and connection lines instead of labels. Professional editorial infographic style.`;
 
   try {
     const response = await fetch("https://api.together.xyz/v1/images/generations", {
