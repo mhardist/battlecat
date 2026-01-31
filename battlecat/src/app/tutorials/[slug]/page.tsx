@@ -9,6 +9,7 @@ import { TutorialActions } from "@/components/TutorialActions";
 import { ToolBadge } from "@/components/ToolBadge";
 import { TutorialRating } from "@/components/TutorialRating";
 import { MossManBadge } from "@/components/MossManBadge";
+import { TutorialReadTracker } from "@/components/TutorialReadTracker";
 import { renderMarkdown } from "@/lib/markdown";
 
 interface Props {
@@ -56,6 +57,8 @@ export default async function TutorialPage({ params }: Props) {
 
   return (
     <article className="max-w-3xl mx-auto">
+      <TutorialReadTracker tutorialId={tutorial.id} maturityLevel={tutorial.maturity_level} />
+
       {/* Hero Image */}
       {tutorial.image_url && (
         <div className="relative -mx-4 sm:mx-0 mb-8 overflow-hidden rounded-none sm:rounded-2xl">

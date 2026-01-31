@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useBookmarks } from "@/hooks/useBookmarks";
 import { useProgress } from "@/hooks/useProgress";
+import { useAchievementContext } from "./AchievementProvider";
 
 interface TutorialActionsProps {
   tutorialId: string;
@@ -17,6 +18,7 @@ export function TutorialActions({
 }: TutorialActionsProps) {
   const { toggle: toggleBookmark, isBookmarked } = useBookmarks();
   const { getEntry, toggleCompleted, setNotes, isCompleted } = useProgress();
+  const { recheckAchievements } = useAchievementContext();
   const [showNotes, setShowNotes] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -51,7 +53,7 @@ export function TutorialActions({
       <div className="flex flex-wrap gap-2">
         {/* Bookmark */}
         <button
-          onClick={() => toggleBookmark(tutorialId)}
+          onClick={() => { toggleBookmark(tutorialId); recheckAchievements(); }}
           className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
             bookmarked
               ? "border-bc-secondary bg-bc-secondary/10 text-bc-secondary"
@@ -76,7 +78,7 @@ export function TutorialActions({
 
         {/* Mark Complete */}
         <button
-          onClick={() => toggleCompleted(tutorialId)}
+          onClick={() => { toggleCompleted(tutorialId); recheckAchievements(); }}
           className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
             completed
               ? "border-bc-success bg-bc-success/10 text-bc-success"
