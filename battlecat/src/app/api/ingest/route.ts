@@ -1,8 +1,12 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { detectSourceType } from "@/lib/extract";
+import { processSubmission } from "@/lib/process-submission";
 
 /** Force dynamic — these routes need runtime env vars */
 export const dynamic = "force-dynamic";
+
+/** Vercel serverless: allow up to 60s for extraction + AI pipeline */
+export const maxDuration = 60;
 
 /**
  * POST /api/ingest
@@ -68,8 +72,13 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Trigger async processing pipeline (extract → classify → generate → publish)
-  triggerProcessing(submission.id).catch(console.error);
+  // Run processing after the response is sent.
+  // after() keeps the Vercel function alive so processing completes.
+  after(async () => {
+    console.log(`[ingest] Starting background processing for ${submission.id}`);
+    const result = await processSubmission(submission.id);
+    console.log(`[ingest] Processing result for ${submission.id}:`, result);
+  });
 
   const channel = isWhatsApp ? "WhatsApp" : "SMS";
   return new NextResponse(
@@ -91,22 +100,4 @@ function escapeXml(text: string): string {
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;");
-}
-
-/** Trigger the processing pipeline by calling /api/process internally */
-async function triggerProcessing(submissionId: string) {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL
-    || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null)
-    || "http://localhost:3000";
-
-  const res = await fetch(`${baseUrl}/api/process`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ submission_id: submissionId }),
-  });
-
-  if (!res.ok) {
-    const err = await res.text();
-    console.error(`Processing failed for ${submissionId}:`, err);
-  }
 }
