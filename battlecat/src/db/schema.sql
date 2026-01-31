@@ -29,6 +29,7 @@ create table if not exists tutorials (
   action_items text[] not null default '{}',
   source_urls text[] not null default '{}',
   source_count integer not null default 1,
+  image_url text,
   is_published boolean not null default true,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()

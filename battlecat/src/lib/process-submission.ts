@@ -1,5 +1,6 @@
 import { extractContent } from "@/lib/extract";
 import { generateTutorial, mergeTutorial } from "@/lib/ai";
+import { generateTutorialImage } from "@/lib/generate-image";
 import { createServerClient } from "@/lib/supabase";
 
 /**
@@ -116,13 +117,31 @@ export async function processSubmission(submissionId: string): Promise<{
       tutorialId = created!.id;
     }
 
-    // 8. Link source to tutorial
+    // 8. Generate hero image (non-blocking — if it fails, tutorial still publishes)
+    try {
+      const imageUrl = await generateTutorialImage(
+        generated.title,
+        generated.classification.topics,
+        generated.classification.maturity_level,
+      );
+      if (imageUrl) {
+        await supabase
+          .from("tutorials")
+          .update({ image_url: imageUrl })
+          .eq("id", tutorialId);
+        console.log(`[process] Generated hero image for ${tutorialId}`);
+      }
+    } catch (imgErr) {
+      console.error(`[process] Image generation failed (non-fatal):`, imgErr);
+    }
+
+    // 9. Link source to tutorial
     await supabase
       .from("sources")
       .update({ tutorial_id: tutorialId })
       .eq("submission_id", submissionId);
 
-    // 9. Mark submission as published
+    // 10. Mark submission as published
     await supabase
       .from("submissions")
       .update({ status: "published" })

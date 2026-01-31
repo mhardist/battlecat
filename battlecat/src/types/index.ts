@@ -60,6 +60,7 @@ export interface Tutorial {
   action_items: string[];
   source_urls: string[];
   source_count: number;
+  image_url: string | null;
   is_published: boolean;
   created_at: string;
   updated_at: string;
