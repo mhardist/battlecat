@@ -6,6 +6,7 @@ import { getAllTutorials as getSeedTutorials, getAllTopics as getSeedTopics } fr
 import { TutorialCard } from "@/components/TutorialCard";
 import { FilterBar } from "@/components/FilterBar";
 import { useBookmarks } from "@/hooks/useBookmarks";
+import { useRatings } from "@/hooks/useRatings";
 
 export default function BrowsePage() {
   const [selectedLevel, setSelectedLevel] = useState<MaturityLevel | null>(null);
@@ -13,6 +14,7 @@ export default function BrowsePage() {
   const [selectedDifficulty, setSelectedDifficulty] = useState<string | null>(null);
   const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
   const { toggle, isBookmarked } = useBookmarks();
+  const { getRating } = useRatings();
 
   // Start with seed data, then fetch from API (includes Supabase tutorials)
   const [allTutorials, setAllTutorials] = useState<Tutorial[]>(getSeedTutorials());
@@ -119,6 +121,7 @@ export default function BrowsePage() {
               showBookmark
               isBookmarked={isBookmarked(tutorial.id)}
               onToggleBookmark={toggle}
+              rating={getRating(tutorial.id)}
             />
           ))}
         </div>

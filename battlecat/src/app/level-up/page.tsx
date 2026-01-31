@@ -6,6 +6,7 @@ import { getAllLevels } from "@/config/levels";
 import { Tutorial } from "@/types";
 import { TutorialCard } from "@/components/TutorialCard";
 import { useBookmarks } from "@/hooks/useBookmarks";
+import { useRatings } from "@/hooks/useRatings";
 import {
   QUIZ_QUESTIONS,
   LEVEL_RESULTS,
@@ -19,6 +20,7 @@ const STORAGE_KEY = "battlecat-quiz-level";
 export default function LevelUpPage() {
   const levels = getAllLevels();
   const { toggle, isBookmarked } = useBookmarks();
+  const { getRating } = useRatings();
 
   const [quizState, setQuizState] = useState<QuizState>("welcome");
   const [currentQ, setCurrentQ] = useState(0);
@@ -286,6 +288,7 @@ export default function LevelUpPage() {
                 showBookmark
                 isBookmarked={isBookmarked(tutorial.id)}
                 onToggleBookmark={toggle}
+                rating={getRating(tutorial.id)}
               />
             ))}
           </div>
@@ -306,6 +309,7 @@ export default function LevelUpPage() {
                 showBookmark
                 isBookmarked={isBookmarked(tutorial.id)}
                 onToggleBookmark={toggle}
+                rating={getRating(tutorial.id)}
               />
             ))}
           </div>

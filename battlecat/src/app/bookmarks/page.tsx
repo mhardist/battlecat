@@ -3,12 +3,14 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useBookmarks } from "@/hooks/useBookmarks";
+import { useRatings } from "@/hooks/useRatings";
 import { TutorialCard } from "@/components/TutorialCard";
 import { getAllTutorials as getSeedTutorials } from "@/data/seed-tutorials";
 import { Tutorial } from "@/types";
 
 export default function BookmarksPage() {
   const { bookmarks, toggle, isBookmarked, loaded } = useBookmarks();
+  const { getRating } = useRatings();
   const [allTutorials, setAllTutorials] = useState<Tutorial[]>(getSeedTutorials());
 
   useEffect(() => {
@@ -59,6 +61,7 @@ export default function BookmarksPage() {
               showBookmark
               isBookmarked={isBookmarked(tutorial.id)}
               onToggleBookmark={toggle}
+              rating={getRating(tutorial.id)}
             />
           ))}
         </div>

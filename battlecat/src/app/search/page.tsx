@@ -4,12 +4,14 @@ import { useState, useEffect, useCallback } from "react";
 import { getAllTutorials as getSeedTutorials } from "@/data/seed-tutorials";
 import { TutorialCard } from "@/components/TutorialCard";
 import { useBookmarks } from "@/hooks/useBookmarks";
+import { useRatings } from "@/hooks/useRatings";
 import { MaturityLevel, Tutorial } from "@/types";
 
 export default function SearchPage() {
   const [query, setQuery] = useState("");
   const [levelFilter, setLevelFilter] = useState<MaturityLevel | null>(null);
   const { toggle, isBookmarked } = useBookmarks();
+  const { getRating } = useRatings();
   const [allTutorials, setAllTutorials] = useState<Tutorial[]>(getSeedTutorials());
 
   // Fetch from API on mount to include Supabase tutorials
@@ -115,6 +117,7 @@ export default function SearchPage() {
               showBookmark
               isBookmarked={isBookmarked(tutorial.id)}
               onToggleBookmark={toggle}
+              rating={getRating(tutorial.id)}
             />
           ))}
         </div>
