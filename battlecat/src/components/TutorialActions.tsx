@@ -1,20 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useBookmarks } from "@/hooks/useBookmarks";
 import { useProgress } from "@/hooks/useProgress";
 import { useAchievementContext } from "./AchievementProvider";
+import { MossManBadge } from "./MossManBadge";
 
 interface TutorialActionsProps {
   tutorialId: string;
   tutorialTitle: string;
   tutorialSlug: string;
+  isStale?: boolean;
 }
 
 export function TutorialActions({
   tutorialId,
   tutorialTitle,
   tutorialSlug,
+  isStale = false,
 }: TutorialActionsProps) {
   const { toggle: toggleBookmark, isBookmarked } = useBookmarks();
   const { getEntry, toggleCompleted, setNotes, isCompleted } = useProgress();
@@ -146,6 +149,9 @@ export function TutorialActions({
           </svg>
           {entry.notes ? "View Notes" : "Add Notes"}
         </button>
+
+        {/* Mark Stale (Moss Man) */}
+        <MossManBadge tutorialId={tutorialId} isStale={isStale} interactive size="md" />
       </div>
 
       {/* Notes editor */}

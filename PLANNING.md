@@ -1,10 +1,10 @@
-# Battle Cat AI — Planning Document
+# Battlecat AI — Planning Document
 
 ## Vision
 
 **battlecat.ai** — A polished, branded evergreen blog that turns your late-night TikTok saves and article forwards into organized, step-by-step AI learning tutorials, mapped to the AI Maturity Framework (Levels 0–4).
 
-You text a link from your iPhone via WhatsApp. The system extracts, processes, categorizes by maturity level, merges related content into rich tutorials, and publishes to a shareable website. Links become references. The synthesized content is the product.
+You text a link from your iPhone via WhatsApp. The system extracts, processes, categorizes by maturity level, merges related content into rich tutorials, generates content-relevant hero images, and publishes to a shareable website. Links become references. The synthesized content is the product.
 
 ---
 
@@ -19,7 +19,8 @@ You text a link from your iPhone via WhatsApp. The system extracts, processes, c
 | **YouTube extraction** | youtube-transcript npm package → Jina Reader fallback |
 | **AI topics** | All topics, organized by framework level |
 | **Content merging** | Yes — merge multiple sources into one topic. Content is king, links are references |
-| **Website vibe** | Polished / branded — new brand "Battle Cat" (He-Man 80s) |
+| **Hero images** | Together AI FLUX — content-relevant infographic/mind-map style |
+| **Website vibe** | Polished / branded — "Battlecat" (He-Man 80s theme system) |
 | **Audience** | Start private, go public later |
 | **Tech comfort** | Technical — can code, deploy, maintain |
 | **Domain** | battlecat.ai — DNS managed at GoDaddy, pointed to Vercel |
@@ -27,19 +28,26 @@ You text a link from your iPhone via WhatsApp. The system extracts, processes, c
 | **Preferences** | Vercel for hosting, Supabase for data, Twilio for messaging |
 | **Repo** | Monorepo: `playground/battlecat` |
 
-### Must-Have Features
+### Must-Have Features (All Implemented)
 - Search across all saved content
-- Filter by topic / category / tag
+- Filter by topic / category / tag / level / relation / difficulty
 - Learning path view (sequential ordering)
 - Bookmark / favorite specific tutorials
 - Share individual posts via link
-- **Level-up view** — shows content mapped to where someone needs to grow next
+- Level-up quiz — interactive assessment to find your AI maturity level
+- AI tools directory with launch timeline
+- Achievement/reward system with He-Man theme
+- Orko 0–5 tutorial ratings
+- Moss Man stale/outdated article markers (database-backed)
+- Dark mode with system preference detection
+- Progress tracking (completion + notes)
+- Mobile-responsive navigation
 
 ### Should-Have Features
-- Comments or notes on any post
-- Progress tracking ("I've completed this tutorial")
-- Email digest / newsletter
-- Dark mode
+- [x] Comments or notes on any post
+- [x] Progress tracking ("I've completed this tutorial")
+- [ ] Email digest / newsletter
+- [x] Dark mode
 
 ---
 
@@ -127,7 +135,7 @@ When the AI processing layer ingests content, it classifies using these signals:
 | Complexity | One-off question | Contextual workflow | Spec → build | Define done → ship | Design system → operate |
 | User role | Consumer | Instructor | Designer | Supervisor | Architect |
 
-The system should also tag content with:
+The system also tags content with:
 - **Level-up content**: teaches you to move FROM this level to the next
 - **Level-practice content**: deepens your skills AT this level
 - **Cross-level content**: spans multiple levels (e.g., a full project walkthrough from L0 to L3)
@@ -139,7 +147,7 @@ The system should also tag content with:
 ### Infrastructure
 - **DNS:** GoDaddy (A + CNAME records pointing to Vercel)
 - **Hosting:** Vercel (Next.js native deployment from `main` branch)
-- **Database:** Supabase (Postgres + RLS + full-text search)
+- **Database:** Supabase (Postgres + RLS + full-text search + Storage)
 - **Search:** Supabase full-text search (GIN indexes on tutorials table)
 
 ### Ingestion
@@ -149,23 +157,25 @@ The system should also tag content with:
 
 ### Content Extraction
 - **Articles / blogs:** Jina Reader API (`r.jina.ai`) with optional API key for higher rate limits
-- **TikTok:** tikwm.com API (cloud-based, no binary dependencies) → extracts video stream URL → Deepgram Nova-3 transcription (spoken words only) → Jina Reader fallback for page content
-- **YouTube:** youtube-transcript npm package (cloud-based, no binary dependencies) → Jina Reader fallback
+- **TikTok:** tikwm.com cloud API → Deepgram Nova-3 transcription → Jina Reader fallback
+- **YouTube:** youtube-transcript npm package → Jina Reader fallback
 - **Twitter/X:** Jina Reader with fxtwitter proxy fallback
 - **LinkedIn:** Jina Reader for public articles/posts, Google cache fallback for /pulse/ articles
 - **PDFs:** pdf-parse v2 (text + metadata extraction)
+- All external fetches use `fetchWithTimeout()` (20s default, AbortController) to prevent hung requests
 
 ### AI Processing
 - **Primary LLM:** Anthropic Claude API (Sonnet `claude-sonnet-4-20250514`)
 - **Tasks:** Categorize by level (0–4), extract key concepts, generate tutorial structure, identify merge candidates, tag topics, assign difficulty
-- **Merging pipeline:** When new content arrives on an existing topic, Claude synthesizes both into an updated, richer tutorial
+- **Merging pipeline:** When new content arrives on an existing topic, Claude synthesizes both into an updated, richer tutorial. Uses `.maybeSingle()` for existence checks, handles slug collisions with random suffix retry.
+- **Image Generation:** Together AI FLUX — generates content-relevant infographic/mind-map hero images based on tutorial summary and action items. Images stored in Supabase Storage.
 
 ### Website
 - **Framework:** Next.js 16 (App Router, Turbopack)
 - **Styling:** Tailwind CSS v4 with custom CSS properties
 - **Deployment:** Vercel (auto-deploy from `main` branch)
 - **Data:** Supabase async data layer with seed data fallback, ISR (60s revalidation)
-- **Branding:** Battle Cat (He-Man 80s) — needs full brand identity design (see branding task below)
+- **Branding:** Battlecat (He-Man 80s theme system) — logo/favicon still needed
 
 ---
 
@@ -202,6 +212,7 @@ The system should also tag content with:
 │  • Twitter: Jina Reader → fxtwitter fallback             │
 │  • PDFs: pdf-parse v2                                    │
 │  • LinkedIn: Jina Reader → Google cache fallback         │
+│  • All fetches wrapped in fetchWithTimeout (20s)         │
 └──────────────────────┬───────────────────────────────────┘
                        │ raw text + metadata
                        ▼
@@ -211,21 +222,35 @@ The system should also tag content with:
 │  1. Classify AI Maturity Level (0–4)                     │
 │  2. Extract topics, key concepts, action items           │
 │  3. Check for existing content on same topic             │
+│     (.maybeSingle() — not .single())                     │
 │  4. If match: MERGE into richer tutorial                 │
 │     If new: CREATE new tutorial                          │
 │  5. Generate step-by-step tutorial structure              │
 │  6. Tag: level, topic, tools mentioned, difficulty       │
 │  7. Generate summary + title                             │
 │  8. Flag as level-up, level-practice, or cross-level     │
+│  9. Handle slug collisions (random suffix retry)         │
 └──────────────────────┬───────────────────────────────────┘
                        │ structured tutorial object
+                       ▼
+┌──────────────────────────────────────────────────────────┐
+│        IMAGE GENERATION (lib/generate-image.ts)          │
+│                                                           │
+│  • Together AI FLUX model                                │
+│  • Prompt includes tutorial summary + action items       │
+│  • Generates infographic/mind-map style hero image       │
+│  • Uploads to Supabase Storage (images bucket)           │
+└──────────────────────┬───────────────────────────────────┘
+                       │
                        ▼
 ┌──────────────────────────────────────────────────────────┐
 │        SUPABASE (Storage Layer)                           │
 │                                                           │
 │  • submissions table (ingestion tracking + status)       │
-│  • tutorials table (content, metadata, level, tags)      │
+│  • tutorials table (content, metadata, level, tags,      │
+│    is_stale, hero_image)                                 │
 │  • sources table (original URLs, extraction data)        │
+│  • images storage bucket (hero images)                   │
 │  • Full-text search (GIN indexes)                        │
 │  • Row Level Security policies                           │
 └──────────────────────┬───────────────────────────────────┘
@@ -236,7 +261,8 @@ The system should also tag content with:
 │                                                           │
 │  SERVER PAGES (ISR, revalidate every 60s):               │
 │  • Home — latest tutorials, framework overview, stats    │
-│  • Tutorial Detail — full step-by-step tutorial          │
+│  • Tutorial Detail — full tutorial + Orko rating +       │
+│    Moss Man stale toggle + read tracker                  │
 │  • Level Pages (L0-L4) — level info + tutorials          │
 │  • Learning Paths — visual L0→L4 timeline                │
 │  • RSS Feed — /feed.xml                                  │
@@ -245,8 +271,15 @@ The system should also tag content with:
 │  • Browse — filter by level, topic, difficulty           │
 │  • Search — full-text search with level filters          │
 │  • Bookmarks — saved tutorials (localStorage)            │
-│  • Level-Up — interactive level-up content finder        │
+│  • Level-Up — interactive 6-question quiz wizard         │
+│  • Tools — AI tools directory with timeline view         │
+│  • Achievements — reward gallery + power tier display    │
 │  • Submit — web form to paste links                      │
+│                                                           │
+│  HE-MAN THEME SYSTEM:                                   │
+│  • Orko — 0–5 tutorial ratings (localStorage)            │
+│  • Moss Man — stale/outdated markers (database-backed)   │
+│  • Sorceress — achievement celebration modal             │
 │                                                           │
 │  FEATURES:                                               │
 │  • Bookmark / favorite (localStorage)                    │
@@ -257,8 +290,31 @@ The system should also tag content with:
 │  • Mobile-first responsive (hamburger nav)               │
 │  • Per-page SEO metadata                                 │
 │  • Loading skeletons                                     │
+│  • 20 achievements, Points of Power, 5 power tiers      │
+│  • Orko 0–5 tutorial ratings                             │
+│  • Moss Man stale/outdated article markers               │
+│  • Sorceress celebration modal on achievement unlock     │
 └──────────────────────────────────────────────────────────┘
 ```
+
+---
+
+## He-Man Theme System
+
+Characters from He-Man and the Masters of the Universe serve as UI metaphors throughout the app:
+
+| Character | Role | Persistence | Implementation |
+|-----------|------|-------------|----------------|
+| **Orko** | Tutorial ratings (0–5 Orkos) | localStorage | SVG icon, interactive hover states, `useRatings` hook |
+| **Moss Man** | Stale/outdated article marker | Supabase database | SVG icon, toggle via `POST /api/tutorials/[id]/stale`, optimistic UI |
+| **Sorceress of Castle Grayskull** | Achievement celebration | localStorage (achievements) | SVG portrait, modal with themed messages, queued display |
+
+### Achievement System
+- **20 achievements** across 7 categories: reading, completion, submission, rating, level-mastery, exploration, special
+- **Points of Power** — each achievement awards points (10–100)
+- **5 Power Tiers:** Apprentice (0+) → Guardian (75+) → Defender (200+) → Heroic Warrior (400+) → Master of the Universe (600+)
+- **Sorceress Modal** — animated celebration with character SVG, themed message per achievement, queued display for multiple unlocks
+- **Tracking** — combines data from 4 localStorage hooks (achievements, bookmarks, ratings, progress) via `AchievementProvider` context
 
 ---
 
@@ -289,24 +345,29 @@ The system should also tag content with:
 
 - [x] **Task 3.1: Level classifier** — Claude Sonnet prompt with full framework definition, classifies to L0–L4
 - [x] **Task 3.2: Tutorial generator** — Two-step: classify then generate (title, summary, body, action items, topics, tags, tools, difficulty)
-- [x] **Task 3.3: Content merger** — Detects topic overlap at same level, Claude synthesizes into richer tutorial, preserves source URLs as references
+- [x] **Task 3.3: Content merger** — Detects topic overlap at same level, Claude synthesizes into richer tutorial, preserves source URLs as references. Uses `.maybeSingle()` for existence check.
 - [x] **Task 3.4: Level-up tagger** — Tags as level-up, level-practice, or cross-level
+- [x] **Task 3.5: Hero image generation** — Together AI FLUX generates content-relevant infographic/mind-map hero images from tutorial summary + action items. Stored in Supabase Storage.
 
 ### Phase 4: The Website
 
-- [x] **Task 4.1: Core pages** — Home (hero, framework cards, latest tutorials, stats), Tutorial detail, Level pages (L0–L4), Level-up view, Learning paths (L0→L4 timeline), Browse/filter, Search, Submit, Bookmarks
-- [x] **Task 4.2: Features** — Bookmarks (localStorage), Share (Web Share API + clipboard), Filters (level, relation, difficulty, topic), Progress tracking (completion + notes), Dark mode (class toggle + localStorage)
+- [x] **Task 4.1: Core pages** — Home (hero, framework cards, latest tutorials, stats), Tutorial detail, Level pages (L0–L4), Level-up quiz, Learning paths (L0→L4 timeline), Browse/filter, Search, Submit, Bookmarks, Tools directory, Achievements/rewards
+- [x] **Task 4.2: Features** — Bookmarks (localStorage), Share (Web Share API + clipboard), Filters (level, relation, difficulty, topic), Progress tracking (completion + notes), Dark mode (class toggle + localStorage), Orko ratings (0–5), Moss Man stale markers (database-backed), Achievement system (20 achievements, 5 power tiers, Sorceress modal)
 - [x] **Task 4.3: Polish** — Mobile hamburger nav, custom 404, per-page SEO metadata, RSS feed (/feed.xml), loading skeletons, OG meta tags
+- [x] **Task 4.4: Interactive quiz** — 6-question wizard with animated transitions, localStorage persistence, level-specific tutorial recommendations
+- [x] **Task 4.5: Tools directory** — AI tools database with launch dates, timeline view, per-level cards, tutorial counts
+- [x] **Task 4.6: He-Man theme system** — Orko ratings, Moss Man stale markers, Sorceress achievement modal
 
 ### Phase 5: End-to-End Integration
 
 - [x] **Task 5.1: Supabase data layer** — `data/tutorials.ts` async module reads from Supabase with seed data fallback, deduplicates by slug
 - [x] **Task 5.2: API endpoint** — `/api/tutorials` serves tutorials + topics to client components
 - [x] **Task 5.3: Server pages wired** — Home, tutorial detail, level pages, learning paths all use async Supabase data layer with ISR (60s)
-- [x] **Task 5.4: Client pages wired** — Browse, search, bookmarks, level-up fetch from `/api/tutorials` on mount
+- [x] **Task 5.4: Client pages wired** — Browse, search, bookmarks, level-up, tools, achievements fetch from `/api/tutorials` on mount
 - [x] **Task 5.5: Processing pipeline** — Shared `lib/process-submission.ts` called via `after()` from submit/ingest routes. No self-referencing HTTP calls.
-- [ ] **Task 5.6: End-to-end testing** — Send TikTok via WhatsApp → verify extraction → verify tutorial appears on site
-- [ ] **Task 5.7: Prompt tuning** — Tune classification and generation prompts based on real results
+- [x] **Task 5.6: Stale marker API** — `POST /api/tutorials/[id]/stale` toggles `is_stale` in Supabase database
+- [ ] **Task 5.7: End-to-end testing** — Send TikTok via WhatsApp → verify extraction → verify tutorial appears on site
+- [ ] **Task 5.8: Prompt tuning** — Tune classification and generation prompts based on real results
 
 ### Phase 6: Expansion
 
@@ -320,12 +381,12 @@ The system should also tag content with:
 
 ---
 
-## Brand Brief: Battle Cat AI
+## Brand Brief: Battlecat AI
 
 All branding decisions are locked in. This brief can be handed directly to a design agent.
 
 ### Brand Origin
-Battle Cat is the armored tiger from the 1980s He-Man cartoon — fierce, loyal, a force multiplier. The brand channels that energy into AI learning: this tool makes you more powerful.
+Battlecat is the armored tiger from the 1980s He-Man cartoon — fierce, loyal, a force multiplier. The brand channels that energy into AI learning: this tool makes you more powerful. The He-Man theme extends beyond branding into the UI with character-themed features (Orko for ratings, Moss Man for stale content, the Sorceress for achievement celebrations).
 
 ### Design Direction
 
@@ -333,20 +394,20 @@ Battle Cat is the armored tiger from the 1980s He-Man cartoon — fierce, loyal,
 |-----------|----------|
 | **Vibe** | Clean, modern, approachable. Not retro — but with subtle 80s accents that reward those who get the reference |
 | **Design system** | Material Design principles — elevation, motion, clear hierarchy, accessible components |
-| **Logo** | Abstract mark that evokes Battle Cat / Cringer without being a literal cartoon tiger. Think: stylized silhouette, geometric abstraction, or a mark that suggests feline power + intelligence. Should work at favicon size and full bleed |
+| **Logo** | Abstract mark that evokes Battlecat / Cringer without being a literal cartoon tiger. Think: stylized silhouette, geometric abstraction, or a mark that suggests feline power + intelligence. Should work at favicon size and full bleed |
 | **Palette** | Agent's recommendation (see below) |
 | **Typography** | Clean sans-serif for body (Inter, Plus Jakarta Sans, or similar). A slightly bolder/display weight for headings that carries personality without being loud |
 | **Tone** | Tasteful but not unapproachable. Confident but not elitist. The site should feel like a smart friend sharing notes, not a lecture hall |
 
 ### Recommended Color Palette
 
-Built around Material Design with subtle warmth and a nod to Battle Cat's green/gold:
+Built around Material Design with subtle warmth and a nod to Battlecat's green/gold:
 
 | Role | Color | Hex | Usage |
 |------|-------|-----|-------|
-| **Primary** | Forest Teal | `#1B7A6E` | Navigation, primary buttons, active states — evokes Battle Cat's armored green |
+| **Primary** | Forest Teal | `#1B7A6E` | Navigation, primary buttons, active states — evokes Battlecat's armored green |
 | **Primary Dark** | Deep Teal | `#0F4F47` | Headers, dark surfaces, hover states |
-| **Secondary** | Amber Gold | `#D4960A` | Accents, highlights, CTAs, level-up indicators — the 80s warmth, Battle Cat's eyes |
+| **Secondary** | Amber Gold | `#D4960A` | Accents, highlights, CTAs, level-up indicators — the 80s warmth, Battlecat's eyes |
 | **Background** | Off-White | `#FAFAF8` | Page background, clean and breathable |
 | **Surface** | Warm White | `#FFFFFF` | Cards, elevated content panels |
 | **Text Primary** | Charcoal | `#1C1C1E` | Body text, headings |
@@ -366,13 +427,13 @@ Each maturity level gets its own accent color, used in badges, borders, and the 
 | L1 | Teal | `#14B8A6` | Engagement beginning |
 | L2 | Green | `#22C55E` | Creative energy, building |
 | L3 | Amber | `#F59E0B` | Warm, trusted, autonomous |
-| L4 | Gold | `#D4960A` | Mastery, Battle Cat's power |
+| L4 | Gold | `#D4960A` | Mastery, Battlecat's power |
 
 ### Logo Concepts (For Design Agent)
 
-Prompt direction for generating the abstract Battle Cat mark:
+Prompt direction for generating the abstract Battlecat mark:
 
-> "Abstract geometric logo mark for 'Battle Cat AI'. Inspired by a powerful armored tiger but NOT a literal tiger illustration. Think: angular geometric shapes suggesting a feline profile or silhouette, clean lines, modern minimalism. Could reference cat ears, a shield shape, or forward motion. Works in single color. Suitable for favicon at 32px. Material Design aesthetic. Colors: forest teal (#1B7A6E) and amber gold (#D4960A). No text in the mark."
+> "Abstract geometric logo mark for 'Battlecat AI'. Inspired by a powerful armored tiger but NOT a literal tiger illustration. Think: angular geometric shapes suggesting a feline profile or silhouette, clean lines, modern minimalism. Could reference cat ears, a shield shape, or forward motion. Works in single color. Suitable for favicon at 32px. Material Design aesthetic. Colors: forest teal (#1B7A6E) and amber gold (#D4960A). No text in the mark."
 
 ### Brand Deliverables Checklist
 
@@ -385,6 +446,7 @@ Prompt direction for generating the abstract Battle Cat mark:
 - [x] Component styling guide (cards, badges, buttons, level indicators)
 - [x] Dark mode variant
 - [x] Loading / empty state illustrations (skeleton components)
+- [x] He-Man character SVGs (Orko, Moss Man, Sorceress)
 
 ---
 
@@ -392,94 +454,24 @@ Prompt direction for generating the abstract Battle Cat mark:
 
 Updated: January 31, 2026
 
-### Phase 0: Foundation & Branding
+### Summary
 
-| Task | Status | Notes |
-|------|--------|-------|
-| 0.1 Create battlecat project | **Done** | Next.js 16, TypeScript, Tailwind CSS v4 |
-| 0.2 Brand identity | **Partial** | Color palette + tokens + dark mode implemented. Logo, favicon, OG image still needed (design agent / Midjourney). |
-| 0.3 Point domain | **Done** | GoDaddy A + CNAME → Vercel. battlecat.ai is live. |
-
-### Phase 1: Ingestion
-
-| Task | Status | Notes |
-|------|--------|-------|
-| 1.1 Twilio/WhatsApp setup | **Done** | WhatsApp Sandbox (+14155238886), webhook → battlecat.ai/api/ingest |
-| 1.2 Ingestion worker | **Done** | `POST /api/ingest` — parses WhatsApp/SMS, detects source type, stores submission, processes via `after()` |
-| Web form | **Done** | `POST /api/submit` + `/submit` page — paste links from browser |
-
-### Phase 2: Content Extraction
-
-| Task | Status | Notes |
-|------|--------|-------|
-| 2.1 Article extractor | **Done** | Jina Reader with optional API key auth |
-| 2.2 TikTok extractor | **Done** | tikwm.com API → Deepgram Nova-3 transcription → Jina fallback |
-| 2.3 Tweet extractor | **Done** | Jina Reader → fxtwitter fallback |
-| 2.4a YouTube extractor | **Done** | youtube-transcript package → Jina Reader fallback |
-| 2.4b PDF extractor | **Done** | pdf-parse v2 (text + metadata) |
-| 2.4c LinkedIn extractor | **Done** | Jina Reader for public articles, Google cache fallback |
-
-### Phase 3: AI Processing Pipeline
-
-| Task | Status | Notes |
-|------|--------|-------|
-| 3.1 Level classifier | **Done** | Claude Sonnet — classifies L0–L4 with full framework prompt |
-| 3.2 Tutorial generator | **Done** | Two-step: classify → generate (title, summary, body, action items, tags) |
-| 3.3 Content merger | **Done** | Detects topic overlap at same level, synthesizes into richer tutorial |
-| 3.4 Level-up tagger | **Done** | Tags as level-up, level-practice, or cross-level |
-
-### Phase 4: The Website
-
-| Task | Status | Notes |
-|------|--------|-------|
-| 4.1 Home page | **Done** | Hero, framework cards, latest tutorials, user distribution chart |
-| 4.1 Tutorial detail | **Done** | Full layout with actions (bookmark, complete, share, notes) |
-| 4.1 Level pages (L0–L4) | **Done** | Level info, transitions, level-up tutorials, all tutorials |
-| 4.1 Level-up view | **Done** | Interactive level selector, transition costs, The Technical Cliff / The Gate |
-| 4.1 Learning paths | **Done** | Visual L0→L4 timeline with tutorials at each node |
-| 4.1 Browse / filter | **Done** | Level, relation, difficulty, topic multi-filter |
-| 4.1 Search | **Done** | Text search across titles, summaries, topics, tags, tools |
-| 4.2 Bookmarks | **Done** | localStorage-backed, dedicated /bookmarks page |
-| 4.2 Share | **Done** | Web Share API + clipboard fallback, per-tutorial |
-| 4.2 Filters | **Done** | Level, relation, difficulty, topic |
-| 4.2 Progress tracking | **Done** | localStorage-backed completion + personal notes |
-| 4.2 Dark mode | **Done** | Class-based toggle with localStorage persistence |
-| 4.3 Mobile responsive | **Done** | Hamburger menu, full-screen overlay, route-aware |
-| 4.3 Custom 404 | **Done** | Branded not-found page |
-| 4.3 Per-page SEO metadata | **Done** | Metadata in layout files for all pages |
-| 4.3 RSS feed | **Done** | /feed.xml route |
-| 4.3 Loading skeletons | **Done** | Skeleton components for all page types |
-
-### Phase 5: End-to-End Integration
-
-| Task | Status | Notes |
-|------|--------|-------|
-| Supabase data layer | **Done** | `data/tutorials.ts` async module + seed data fallback |
-| API endpoint | **Done** | `/api/tutorials` for client components |
-| Server pages wired to Supabase | **Done** | ISR with 60s revalidation |
-| Client pages wired to API | **Done** | Browse, search, bookmarks, level-up fetch from API |
-| Processing pipeline | **Done** | Shared `lib/process-submission.ts` + `after()` API |
-| Live end-to-end test | **Pending** | Awaiting merge + redeploy of pipeline fix |
-| Prompt tuning | **Pending** | Requires live pipeline results |
-
-### Phase 6: Expansion
-
-| Task | Status | Notes |
-|------|--------|-------|
-| Web form ingestion | **Done** | /submit page + /api/submit endpoint |
-| iOS Shortcut | **Pending** | |
-| Email ingestion | **Pending** | |
-| Newsletter / digest | **Pending** | |
-| Make site public | **Pending** | |
-| Admin dashboard | **Pending** | |
+| Phase | Status |
+|-------|--------|
+| Phase 0: Foundation & Branding | **Done** (logo pending) |
+| Phase 1: Ingestion | **Done** |
+| Phase 2: Content Extraction | **Done** (6 extractors) |
+| Phase 3: AI Processing Pipeline | **Done** (includes image generation) |
+| Phase 4: The Website | **Done** (12 pages, 20 achievements, He-Man theme) |
+| Phase 5: End-to-End Integration | **Done** (prompt tuning pending) |
+| Phase 6: Expansion | **Partial** (web form done, rest pending) |
 
 ### What Requires Manual Action
 
 1. **Logo / visual assets** — Use Midjourney, DALL-E, or designer with the brand brief above
-2. **Merge pipeline fix PR** — Merge the latest PR to deploy the `after()` processing fix
-3. **End-to-end test** — Send a TikTok link via WhatsApp or web form, verify it appears as a tutorial
-4. **Rotate API keys** — All keys (Supabase, Anthropic, Deepgram, Twilio) were exposed during development session and should be rotated
-5. **10DLC registration** (optional) — Required if you want to add SMS ingestion alongside WhatsApp
+2. **End-to-end test** — Send a TikTok link via WhatsApp or web form, verify it appears as a tutorial
+3. **Prompt tuning** — Tune classification and generation prompts based on real results
+4. **10DLC registration** (optional) — Required if you want to add SMS ingestion alongside WhatsApp
 
 ### Environment Variables (Vercel)
 
@@ -495,3 +487,5 @@ All of these are configured in Vercel project settings:
 | `TWILIO_ACCOUNT_SID` | Twilio account SID |
 | `TWILIO_AUTH_TOKEN` | Twilio auth token |
 | `TWILIO_PHONE_NUMBER` | Twilio WhatsApp number (+14155238886) |
+| `JINA_API_KEY` | Jina Reader API key (optional, improves rate limits) |
+| `TOGETHER_API_KEY` | Together AI API key (hero image generation) |
