@@ -123,6 +123,8 @@ export async function processSubmission(submissionId: string): Promise<{
         generated.title,
         generated.classification.topics,
         generated.classification.maturity_level,
+        generated.summary,
+        generated.action_items,
       );
       if (imageUrl) {
         await supabase
