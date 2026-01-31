@@ -1,4 +1,4 @@
--- Battle Cat AI — Supabase Database Schema
+-- Battlecat AI — Supabase Database Schema
 -- Run this in the Supabase SQL editor to initialize the database.
 
 -- Submissions: raw SMS ingestions

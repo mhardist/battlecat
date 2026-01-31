@@ -6,6 +6,7 @@ import { getTutorialBySlug } from "@/data/tutorials";
 import { getAllTutorials as getSeedTutorials } from "@/data/seed-tutorials";
 import { LevelBadge } from "@/components/LevelBadge";
 import { TutorialActions } from "@/components/TutorialActions";
+import { ToolBadge } from "@/components/ToolBadge";
 import { renderMarkdown } from "@/lib/markdown";
 
 interface Props {
@@ -23,16 +24,16 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const tutorial = await getTutorialBySlug(slug);
-  if (!tutorial) return { title: "Tutorial Not Found — Battle Cat AI" };
+  if (!tutorial) return { title: "Tutorial Not Found — Battlecat AI" };
   const level = getLevel(tutorial.maturity_level);
   return {
-    title: `${tutorial.title} — Battle Cat AI`,
+    title: `${tutorial.title} — Battlecat AI`,
     description: tutorial.summary,
     openGraph: {
       title: tutorial.title,
       description: tutorial.summary,
       type: "article",
-      siteName: "Battle Cat AI",
+      siteName: "Battlecat AI",
       ...(tutorial.image_url && { images: [{ url: tutorial.image_url, width: 1344, height: 768 }] }),
       tags: [...tutorial.topics, `L${tutorial.maturity_level} ${level?.you_role}`],
     },
@@ -104,12 +105,7 @@ export default async function TutorialPage({ params }: Props) {
             </span>
           ))}
           {tutorial.tools_mentioned.map((tool) => (
-            <span
-              key={tool}
-              className="rounded-full bg-bc-border px-2.5 py-0.5 text-xs text-bc-text-secondary"
-            >
-              {tool}
-            </span>
+            <ToolBadge key={tool} tool={tool} size="md" />
           ))}
         </div>
       </header>

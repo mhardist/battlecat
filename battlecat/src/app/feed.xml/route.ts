@@ -29,7 +29,7 @@ ${t.topics.map((topic) => `      <category>${escapeXml(topic)}</category>`).join
   const feed = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Battle Cat AI</title>
+    <title>Battlecat AI</title>
     <link>${SITE_URL}</link>
     <description>AI tutorials mapped to the AI Maturity Framework (L0 Asker → L4 Architect)</description>
     <language>en-us</language>

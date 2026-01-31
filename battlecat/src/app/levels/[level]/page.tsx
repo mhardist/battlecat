@@ -17,9 +17,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { level: levelParam } = await params;
   const levelNum = parseInt(levelParam, 10) as MaturityLevel;
   const level = getLevel(levelNum);
-  if (!level) return { title: "Level Not Found — Battle Cat AI" };
+  if (!level) return { title: "Level Not Found — Battlecat AI" };
   return {
-    title: `Level ${level.level}: ${level.you_role} → ${level.ai_role} — Battle Cat AI`,
+    title: `Level ${level.level}: ${level.you_role} → ${level.ai_role} — Battlecat AI`,
     description: level.description,
   };
 }

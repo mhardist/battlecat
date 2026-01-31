@@ -39,7 +39,7 @@ export default function SubmitPage() {
       }
 
       setState("success");
-      setMessage("Link received! Battle Cat is processing it.");
+      setMessage("Link received! Battlecat is processing it.");
       setUrl("");
       setNote("");
 
@@ -61,7 +61,7 @@ export default function SubmitPage() {
       <section className="space-y-2">
         <h1 className="text-3xl font-bold">Submit a Link</h1>
         <p className="text-bc-text-secondary">
-          Paste a TikTok, article, tweet, or any AI-related link. Battle Cat
+          Paste a TikTok, article, tweet, or any AI-related link. Battlecat
           will extract the content, classify it by maturity level, and turn it
           into a tutorial.
         </p>
@@ -141,7 +141,7 @@ export default function SubmitPage() {
             },
             {
               step: "2",
-              title: "Battle Cat extracts the content",
+              title: "Battlecat extracts the content",
               desc: "We pull the text, transcribe audio, and grab the key info.",
             },
             {
@@ -176,7 +176,7 @@ export default function SubmitPage() {
       {/* SMS Note */}
       <div className="rounded-lg border border-bc-secondary/30 bg-bc-secondary/5 p-4 text-sm text-bc-text-secondary">
         <strong className="text-bc-secondary">Pro tip:</strong> You can also
-        text links directly to your Battle Cat phone number from your iPhone.
+        text links directly to your Battlecat phone number from your iPhone.
         Same pipeline, faster workflow.
       </div>
     </div>

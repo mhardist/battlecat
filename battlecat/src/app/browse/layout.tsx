@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Browse Tutorials — Battle Cat AI",
+  title: "Browse Tutorials — Battlecat AI",
   description:
     "Filter AI tutorials by maturity level, topic, difficulty, and more. Find exactly what you need to level up.",
 };

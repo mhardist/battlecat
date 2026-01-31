@@ -32,7 +32,7 @@ interface GeneratedTutorial {
   classification: ClassificationResult;
 }
 
-const LEVEL_CLASSIFIER_PROMPT = `You are an AI content classifier for Battle Cat AI, a learning platform built around the AI Maturity Framework.
+const LEVEL_CLASSIFIER_PROMPT = `You are an AI content classifier for Battlecat AI, a learning platform built around the AI Maturity Framework.
 
 Classify the following content into the framework:
 
@@ -58,7 +58,7 @@ Respond ONLY with valid JSON matching this schema:
   "difficulty": "<beginner|intermediate|advanced>"
 }`;
 
-const TUTORIAL_GENERATOR_PROMPT = `You are a senior content writer for Battle Cat AI, a premium learning platform that organizes AI knowledge by maturity level (L0 Asker through L4 Architect).
+const TUTORIAL_GENERATOR_PROMPT = `You are a senior content writer for Battlecat AI, a premium learning platform that organizes AI knowledge by maturity level (L0 Asker through L4 Architect).
 
 Transform the following extracted content into a beautifully structured, magazine-quality tutorial. This will be rendered on a polished blog — make it look and read like a top-tier tech publication (think Stratechery, Verge, or a well-produced Medium article).
 
@@ -167,7 +167,7 @@ export async function mergeTutorial(
     messages: [
       {
         role: "user",
-        content: `You are merging new information into an existing tutorial on Battle Cat AI.
+        content: `You are merging new information into an existing tutorial on Battlecat AI.
 
 EXISTING TUTORIAL:
 Title: ${existingTutorial.title}
