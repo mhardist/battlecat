@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { Tutorial } from "@/types";
+import { ImpactScore } from "@/lib/impact-score";
 import { LevelBadge } from "./LevelBadge";
 import { ToolBadge } from "./ToolBadge";
 import { StaleOverlay } from "./MossManBadge";
+import { ImpactScoreBadge } from "./ImpactScoreBadge";
 
 interface TutorialCardProps {
   tutorial: Tutorial;
@@ -11,6 +13,8 @@ interface TutorialCardProps {
   onToggleBookmark?: (id: string) => void;
   /** 0-5 Orko rating (from localStorage). Shown as mini Orkos on the card. */
   rating?: number;
+  /** Impact score (from useImpactScore hook). Shown as compact badge. */
+  impactScore?: ImpactScore;
 }
 
 export function TutorialCard({
@@ -19,6 +23,7 @@ export function TutorialCard({
   isBookmarked = false,
   onToggleBookmark,
   rating = 0,
+  impactScore,
 }: TutorialCardProps) {
   return (
     <Link
@@ -66,6 +71,7 @@ export function TutorialCard({
                     {tutorial.source_count} sources
                   </span>
                 )}
+                {impactScore && <ImpactScoreBadge score={impactScore} />}
               </div>
             )}
 
@@ -79,6 +85,7 @@ export function TutorialCard({
                     <span>{tutorial.source_count} sources</span>
                   </>
                 )}
+                {impactScore && <ImpactScoreBadge score={impactScore} />}
               </div>
             )}
 
