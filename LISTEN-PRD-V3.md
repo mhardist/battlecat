@@ -31,10 +31,6 @@ Tutorials are 800-1500+ words. Not every user wants to read — some prefer to l
 - **As a system, when a tutorial is merged with new content (body changes),** the audio is regenerated to match the updated body.
 - **[NEW] As a system, if audio generation is disabled via config,** the pipeline skips audio without errors and tutorials publish normally.
 
-### Admin
-- **As an admin, I can trigger audio generation** for existing tutorials that don't have audio yet (backfill).
-- ** As an admin, I can force-regenerate audio** for tutorials that already have an `audio_url` (verify or replace).
-
 ---
 
 ## 4. Functional Requirements
@@ -234,9 +230,7 @@ All three post-processing steps run sequentially within the `after()` callback. 
 |------|-------------|
 | `src/lib/generate-audio.ts` | Core audio generation module (markdown strip, sanitization, Deepgram TTS, Supabase upload) |
 | `src/components/ListenButton.tsx` | Client component — audio play/pause button with `icon` and `bar` variants, a11y support |
-| `src/app/api/tutorials/generate-audio/route.ts` | Backfill API endpoint with `ADMIN_SECRET` auth gate |
 | **[NEW]** `src/db/migrations/001_add_audio_url.sql` | Versioned migration: `ALTER TABLE tutorials ADD COLUMN IF NOT EXISTS audio_url text;` |
-| **[NEW]** `src/lib/__tests__/generate-audio.test.ts` | Unit tests for `stripMarkdownToScript`, `chunkText`, sanitization |
 | **[NEW]** `vitest.config.ts` | Vitest configuration (test runner setup) |
 
 ### Modified Files
