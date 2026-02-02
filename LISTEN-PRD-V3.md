@@ -18,26 +18,6 @@ Tutorials are 800-1500+ words. Not every user wants to read — some prefer to l
 
 ---
 
-## 2. Changes from V1
-
-| Gap Found in V1 | Fix in V2 | Rationale |
-|------------------|-----------|-----------|
-| Backfill endpoint has no auth | Add `ADMIN_SECRET` env var check (BF-2) | Prevents cost attacks; consistent with codebase's env-var patterns |
-| No automated tests | Add vitest + unit tests for strip/chunk functions (Section 10.2) | Pure functions are ideal first test targets; establishes testing pattern for codebase |
-| No kill switch | Add `AUDIO_ENABLED` env var (AUD-10) | Matches `TOGETHER_API_KEY` skip-if-missing pattern |
-| Cache invalidation missing on regen | Use `{slug}-{timestamp}.mp3` filename (AUD-6, STO-2) | Matches existing image gen pattern (`{slug}-{timestamp}.png`) |
-| MP3 concatenation artifacts | Strip ID3 headers from chunks after the first (AUD-5b) | Eliminates clicks/pops at chunk boundaries |
-| Accessibility absent | New section 3.7 with aria-label, aria-pressed, keyboard reqs | Required for any interactive control |
-| Mobile autoplay unaddressed | Render real `<audio>` element in DOM (FE-7) | iOS Safari requires gesture-initiated playback |
-| Timeout budget tight | Add 20s per-step timeout + skip-if-slow (PIP-4) | Prevents audio gen from blowing the 60s Vercel budget |
-| No backfill idempotency | Add `force` mode that re-checks storage (BF-5) | Handles partial failures |
-| Markdown stripping fragile | New section 3.2 with expanded strip rules (SAN-1 through SAN-8) | Prevents garbage audio from tables, HTML entities, etc. |
-| No monitoring | Structured log fields + success/failure counts (AUD-11, PIP-5) | Enables basic observability without new infrastructure |
-| Database migration ad-hoc | Versioned migration file (DB-4) | Trackable, repeatable |
-| Storage scaling unaddressed | Scaling notes in cost estimate, cleanup in open items | Awareness of free tier ceiling |
-
----
-
 ## 3. User Stories
 
 ### Playback
@@ -397,7 +377,7 @@ Run with: `npm test` or `npx vitest run`
 | Playback speed control | P2 | Add 1x/1.5x/2x speed toggle to ListenButton |
 | Audio progress bar | P2 | Show playback position and duration |
 | Download button | P3 | Allow users to download MP3 for offline listening |
-| Voice selection | P3 | Let users choose from multiple Deepgram voices |
+| Voice selection | P3 | Let admin choose from multiple Deepgram voices |
 | Audio-only feed | P4 | Podcast RSS feed with audio enclosures |
 | Streaming playback | P4 | Stream audio as it generates instead of waiting for full file |
 |  Old file cleanup | P3 | Script or cron to delete orphaned audio files from storage after regeneration |
