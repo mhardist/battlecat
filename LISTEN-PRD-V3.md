@@ -3,7 +3,7 @@
 **Feature:** Text-to-Speech Audio for Tutorials
 **Product:** Battlecat AI (battlecat.ai)
 **Branch:** `bkirsch-listen-to-tutorial`
-**Version:** 3.0
+**Version:** 3.1
 **Date:** February 2, 2026
 
 ---
@@ -25,6 +25,7 @@ Tutorials are 800-1500+ words. Not every user wants to read — some prefer to l
 - **As a reader, I can click a listen icon on tutorial cards** (browse, search, bookmarks, level-up) to play audio without opening the tutorial.
 - **As a reader, when I play audio on one card and then click play on another,** the first stops automatically (single-player enforcement).
 - **As a reader, if a tutorial has no audio yet,** the listen button does not appear (no broken/empty state).
+- **As a reader browsing existing tutorials created before the audio feature,** I see no listen buttons — the UI is identical to what it was before the feature shipped.
 
 ### Pipeline
 - **As a system, when a new tutorial is created via the processing pipeline,** an MP3 audio file is automatically generated and persisted.
@@ -71,9 +72,9 @@ Tutorials are 800-1500+ words. Not every user wants to read — some prefer to l
 |----|------------|--------|-------|
 | PIP-1 | Run audio generation in parallel with image generation (step 8) using `Promise.all` in `processSubmission()`, before link/publish | Not started | Reduces combined time from ~17-23s to ~10-13s |
 | PIP-2 | Audio generation failure does not block tutorial publishing (non-fatal, same pattern as image) | Not started | |
-| PIP-3 | Always regenerate audio on merge — body is always overwritten, no change detection needed | Not started | ~$0.01 per call, not worth optimizing |
-| PIP-4 | Audio generation step has a 20-second timeout — if exceeded, abort and return null | Not started | Prevents blowing the 60s Vercel budget |
-| PIP-5 | Log total `after()` elapsed time at completion: `[process] after() completed in {ms}ms` | Not started | Track budget usage |
+| PIP-3 | Always regenerate audio on merge — body is always overwritten, no change detection needed | Not started | ~$0.20 per call, acceptable for v1 |
+| PIP-4 | Audio generation step has a 20-second timeout — if exceeded, abort and return null | Not started | Prevents blowing the 60s Vercel budget. Use `Promise.race([audioPromise, timeoutPromise])` since Deepgram SDK may not support AbortSignal directly |
+| PIP-5 | Log total `processSubmission` elapsed time at completion: `[process] processSubmission completed in {ms}ms` | Not started | Track budget usage |
 
 ### 3.4 Database
 
@@ -82,13 +83,14 @@ Tutorials are 800-1500+ words. Not every user wants to read — some prefer to l
 | DB-1 | Add `audio_url text` column to tutorials table (`src/db/schema.sql`) | Not started | |
 | DB-2 | Add `audio_url: string \| null` to `Tutorial` TypeScript interface (`src/types/index.ts`) | Not started | |
 | DB-3 | Existing `select("*")` queries automatically include `audio_url` (no data layer changes needed) | Not started | |
-| DB-4 |Create versioned migration file: `src/db/migrations/001_add_audio_url.sql` | Not started | Trackable migration |
+| DB-4 | Create versioned migration file: `src/db/migrations/001_add_audio_url.sql` | Not started | Trackable migration |
+| DB-5 | Migration uses `ADD COLUMN IF NOT EXISTS audio_url text` with no `DEFAULT` — all existing rows get null. No backfill of audio for existing tutorials. | Not started | Existing tutorials only get audio if re-processed via merge |
 
 ### 3.5 Storage
 
 | ID | Requirement | Status | Notes |
 |----|------------|--------|-------|
-| STO-1 | Create `audio` bucket in Supabase Storage (public, 50 MB limit, `audio/mpeg` only) | Not started | |
+| STO-1 | Create `audio` bucket in Supabase Storage (public, 10 MB per-file upload limit, `audio/mpeg` MIME type only) | Not started | |
 | STO-2 | File path convention: `tutorials/{slug}-{timestamp}.mp3` | Not started | Cache busting |
 | STO-3 | No upsert needed — each generation creates a unique filename due to timestamp | Not started | |
 | STO-4 | Old audio files are not auto-deleted on regeneration. Document manual cleanup procedure for storage maintenance. | Not started | Acceptable tradeoff for v1 |
@@ -101,14 +103,18 @@ Tutorials are 800-1500+ words. Not every user wants to read — some prefer to l
 | FE-2 | `ListenButton` client component with `bar` variant (icon + text label, matches Bookmark/Complete styling) | Not started | |
 | FE-3 | Listen icon on tutorial cards below bookmark (browse, search, bookmarks, level-up pages) | Not started | |
 | FE-4 | Listen bar on tutorial detail page between Bookmark and Mark Complete buttons | Not started | |
-| FE-5 | Only render ListenButton when `audioUrl` is truthy (no broken/empty state) | Not started | |
+| FE-5 | Only render ListenButton when `audioUrl` is truthy — tutorials with null/undefined `audio_url` must not show any listen-related UI (no button, no icon, no placeholder). This applies to seed tutorials, existing Supabase tutorials created before the feature, and tutorials where audio generation failed. | Not started | Guards in both TutorialCard and TutorialActions |
 | FE-6 | Single-player enforcement via custom `"battlecat-audio-play"` window event | Not started | |
-| FE-7 | Render `<audio>` element in DOM (hidden) rather than programmatic `new Audio()` — required for iOS Safari gesture-initiated playback | Not started | Mobile compatibility |
+| FE-7 | Render `<audio>` element in DOM (hidden) rather than programmatic `new Audio()` — required for iOS Safari gesture-initiated playback | Not started | Mobile compatibility — play() must be called synchronously in click handler, not deferred via useEffect or state updates |
 | FE-8 | Graceful error handling — `<audio>` `error` event resets playing state | Not started | |
 | FE-9 | `onClick` with `preventDefault` + `stopPropagation` for icon variant (inside `<Link>` wrapper) | Not started | |
 | FE-10 | Cleanup on unmount — pause audio, remove event listeners on Next.js navigation | Not started | |
-
-
+| FE-11 | Implement MediaSession API with `play`, `pause`, and `stop` action handlers for lock screen/notification center controls | Not started | |
+| FE-12 | Set MediaSession metadata (title from tutorial, artist: "Battlecat AI", artwork from `image_url` if available) | Not started | |
+| FE-13 | Update MediaSession `playbackState` on play/pause/end events | Not started | |
+| FE-14 | Dynamic `aria-label` ("Play tutorial audio" / "Pause tutorial audio") on ListenButton | Not started | |
+| FE-15 | `aria-pressed` attribute reflecting current play state | Not started | |
+| FE-16 | Keyboard support — Enter/Space trigger play/pause, visible focus outline matching existing button styles | Not started | |
 
 ---
 
@@ -119,7 +125,7 @@ Tutorials are 800-1500+ words. Not every user wants to read — some prefer to l
 | NFR-1 | Audio generation completes within 20s per tutorial (hard timeout via AbortController) | Not started | |
 | NFR-2 | New env vars required: `AUDIO_ENABLED` (kill switch) | Not started | |
 | NFR-3 | Site works without audio bucket — graceful degradation, listen buttons hidden | Not started | |
-| NFR-4 | Seed tutorials work without audio (`audio_url` is null, no listen button rendered) | Not started | |
+| NFR-4 | All existing tutorials (seed and Supabase) work without audio — `audio_url` defaults to null, no listen button rendered anywhere (cards or detail page). The UI for tutorials without audio must be identical to the pre-feature state. | Not started | Covers seed tutorials, pre-existing Supabase tutorials, and any tutorial where audio generation failed or was skipped |
 | NFR-5 | Audio generation module follows same error handling pattern as image generation (never throws) | Not started | |
 | NFR-6 | Audio plays correctly on iOS Safari 16+, Chrome Android, desktop Chrome/Firefox/Safari  | Not started | |
 
@@ -134,6 +140,14 @@ Tutorials are 800-1500+ words. Not every user wants to read — some prefer to l
 | TTS | Deepgram Aura-2 | Text-to-speech audio generation |
 | Storage | Supabase Storage | MP3 file persistence (`audio` bucket) |
 | Testing | Vitest | Unit tests for text processing functions |
+
+### Key Function Signatures
+
+```ts
+generateTutorialAudio(body: string, slug: string): Promise<string | null>
+stripMarkdownToScript(markdown: string): string
+chunkText(text: string, maxChars?: number): string[]
+```
 
 ### Deepgram TTS Configuration
 
@@ -199,17 +213,17 @@ Step 8 + 8c (parallel via Promise.all):
 Step 8b: Generate hot news blurb (Claude, if flagged)  ~5s     (runs after parallel step)
 Step 9:  Link source to tutorial
 Step 10: Mark submission as published
-[NEW] Log: [process] after() completed in {ms}ms
+[NEW] Log: [process] processSubmission completed in {ms}ms
 ```
 
-Image and audio generation run in parallel via `Promise.all` since they are independent operations writing to different columns. Hot news (step 8b) runs sequentially after since it's conditional. Total post-processing budget: ~10-18s of the 60s Vercel timeout (steps 1-7 consume ~15-30s for extraction + AI generation). Audio generation failure does not block tutorial publishing. Each step has an individual timeout to prevent cascading delays.
+Image and audio generation run in parallel via `Promise.all` since they are independent operations writing to different columns. Hot news (step 8b) runs sequentially after since it's conditional. Total post-processing budget: ~10-18s of the 60s Vercel timeout (steps 1-7 consume ~15-30s for extraction + AI generation). Audio generation failure does not block tutorial publishing. Each step has an individual timeout to prevent cascading delays. Note: hot-news tutorials may see ~3s additional latency since step 8b now waits for both image and audio to complete (not just image).
 
 ### Key Architectural Decisions
 
 1. **Server-generated audio (not browser TTS)** — Consistent, high-quality voice output across all devices. Files generated once and cached permanently.
 2. **Sentence-boundary chunking** — Deepgram enforces 2000 char limit. Split at sentence boundaries (`. `, `! `, `? `, `.\n`) with 1900 char threshold. Single sentences >1900 chars split at last word boundary.
 3. **MP3 concatenation with header stripping** — Strip ID3 tags and MP3 headers from chunks 2+ before concatenation to prevent audible artifacts at chunk boundaries.
-4. **Parallel pipeline steps** — Image generation (step 8) and audio generation (step 8c) run concurrently via `Promise.all` in `after()` callback. Both are independent and non-blocking — failure of either does not block tutorial publishing.
+4. **Parallel pipeline steps** — Image generation (step 8) and audio generation (step 8c) run concurrently via `Promise.all` in `processSubmission()`. Both are independent and non-blocking — failure of either does not block tutorial publishing.
 5. **Custom window event for single-player** — `"battlecat-audio-play"` event dispatched on play ensures only one ListenButton plays at a time across the page.
 6. **DOM-rendered `<audio>` element** — Hidden `<audio>` element rendered in DOM (not programmatic `new Audio()`). Required for iOS Safari which blocks `play()` calls not in a user gesture call stack.
 7. **Timestamped filenames for cache busting** — `tutorials/{slug}-{timestamp}.mp3` ensures browsers fetch fresh audio after regeneration. Matches existing image generation pattern.
@@ -249,6 +263,7 @@ Image and audio generation run in parallel via `Promise.all` since they are inde
 | `src/components/TutorialActions.tsx` | Add `audioUrl` prop + ListenButton bar between Bookmark and Mark Complete |
 | `src/app/tutorials/[slug]/page.tsx` | Pass `audioUrl` prop to TutorialActions |
 | `.env.example` | Add `AUDIO_ENABLED` and `TOGETHER_API_KEY` (existing gap) |
+| `src/data/seed-tutorials.ts` | Add `audio_url: null` to all seed tutorial objects |
 | `package.json` | Add `vitest` dev dependency and `"test"` script |
 
 ---
@@ -269,6 +284,8 @@ Image and audio generation run in parallel via `Promise.all` since they are inde
 | Multiple listen buttons on same page | Custom event `"battlecat-audio-play"` ensures only one plays at a time. |
 | Merged tutorial | Audio always regenerated on merge (body is always overwritten). New timestamped filename. Old file remains in storage (manual cleanup). |
 | Seed tutorials (no Supabase) | `audio_url` is null. Listen button not rendered. |
+| Existing Supabase tutorials (created before audio feature) | `audio_url` column defaults to null via migration. No listen button rendered on cards or detail page. No visual difference from pre-feature UI. |
+| Tutorial where audio generation failed or was skipped | `audio_url` remains null. Listen button hidden. Tutorial displays normally without any audio-related UI. |
 | Supabase Storage `audio` bucket not created | Upload fails gracefully. Returns null. |
 | Tutorial body contains tables | Table markup removed entirely — tables are visual content. |
 | Tutorial body contains bare URLs | URLs removed from speech text. |
@@ -291,10 +308,10 @@ Image and audio generation run in parallel via `Promise.all` since they are inde
 
 | Service | Cost model | Per tutorial estimate |
 |---------|-----------|---------------------|
-| Deepgram Aura-2 TTS | Pay-per-character | ~$0.005-0.015 per tutorial (5000-9000 chars) |
+| Deepgram Aura-2 TTS | Pay-per-character ($0.030/1K chars) | ~$0.15-0.27 per tutorial (5000-9000 chars) |
 | Supabase Storage | 1GB free, then $0.021/GB | ~$0.0001 per MP3 file (3-5 MB) |
 
-Per-tutorial API cost is low (~$0.01). Storage cost is the primary concern: at ~4MB average per tutorial, **100 tutorials consumes ~400MB (40% of Supabase's 1GB free tier)**. The ceiling is ~250 tutorials before requiring a paid plan.
+Per-tutorial API cost is ~$0.20. Storage cost is the primary concern: at ~4MB average per tutorial, **100 tutorials consumes ~400MB (40% of Supabase's 1GB free tier)**. The ceiling is ~250 tutorials before requiring a paid plan.
 
 **Storage scaling note:** Timestamped filenames mean regenerated audio accumulates old files — periodic manual cleanup of orphaned files recommended when storage exceeds 75% capacity (750MB).
 
@@ -306,13 +323,13 @@ Per-tutorial API cost is low (~$0.01). Storage cost is the primary concern: at ~
 
 1. Ensure `DEEPGRAM_API_KEY` is set in `.env.local`
 2. Set `AUDIO_ENABLED=true` in `.env.local`
-4. Create the `audio` bucket in Supabase Dashboard: Storage -> New bucket -> Name: `audio`, Public: Yes
-5. Run the schema migration (or use the migration file `src/db/migrations/001_add_audio_url.sql`):
+3. Create the `audio` bucket in Supabase Dashboard: Storage -> New bucket -> Name: `audio`, Public: Yes
+4. Run the schema migration (or use the migration file `src/db/migrations/001_add_audio_url.sql`):
    ```sql
    ALTER TABLE tutorials ADD COLUMN IF NOT EXISTS audio_url text;
    ```
-6. Install test dependencies: `npm install`
-7. Start the dev server: `npm run dev`
+5. Install test dependencies: `npm install`
+6. Start the dev server: `npm run dev`
 
 ### 10.2 Automated Tests
 
@@ -340,8 +357,10 @@ Run with: `npm test` or `npx vitest run`
 | T-4 | Single-player enforcement | On `/browse`, play audio on one card. Play on another. Verify first stops, only second plays. |
 | T-5 | No audio graceful state | Find tutorial without `audio_url`. Verify no listen button on detail page or card. |
 | T-6 | Error resilience | Remove `DEEPGRAM_API_KEY`. Submit URL. Verify tutorial publishes without audio (no crash, `audio_url` null). Restore key. |
+| T-7 | Keyboard accessibility | Tab to ListenButton. Press Enter/Space. Verify play/pause toggles. Verify focus outline visible. |
 | T-8 | Kill switch | Set `AUDIO_ENABLED=false`. Submit URL. Verify no audio generated. Set back to `true`. |
 | T-9 | iOS Safari | Open on iOS Safari. Tap listen button. Verify audio plays (not blocked by autoplay policy). |
+| T-9b | Lock screen controls | iOS/Android — start playing audio, lock phone. Verify lock screen shows play/pause controls with tutorial title. Verify pause/resume from lock screen works. |
 
 ### 10.4 Deployed Testing (Vercel / battlecat.ai)
 
@@ -359,9 +378,13 @@ Run with: `npm test` or `npx vitest run`
 1. **Add env var** — Set `AUDIO_ENABLED=true` in Vercel environment settings
 2. **Schema + Storage** — Run migration and create bucket (both environments)
 3. **Deploy code** — All file changes in a single PR
-4. **Verify kill switch** — Temporarily set `AUDIO_ENABLED=false`, confirm pipeline skips audio, then set back to `true`
-5. **Verify** — Spot-check tutorials on all 5 pages, including mobile Safari
-6. **Monitor** — Watch Vercel function logs for `[audio]` lines, check success/failure counts and after() timing
+4. **Verify existing tutorials** — Confirm existing tutorials (without audio) display no listen buttons on any page — UI should be identical to pre-feature state
+5. **Verify kill switch** — Temporarily set `AUDIO_ENABLED=false`, confirm pipeline skips audio, then set back to `true`
+6. **Verify new tutorial** — Submit a URL, confirm audio is generated and listen button appears
+7. **Verify** — Spot-check tutorials on all 5 pages, including mobile Safari
+8. **Monitor** — Watch Vercel function logs for `[audio]` lines, check success/failure counts and after() timing
+
+**Note:** Existing tutorials will not be backfilled with audio. Only new tutorials (and existing ones that receive a merge from new content) will get audio generated. This is intentional for v1 — a backfill script is a future consideration.
 
 ---
 
@@ -380,6 +403,7 @@ Run with: `npm test` or `npx vitest run`
 |  User preference | P3 | localStorage toggle to hide listen buttons site-wide |
 |  Multi-language voices | P4 | Abstract voice selection for future i18n support |
 | Storage monitoring | P3 | Alert when audio bucket exceeds 750MB (75% of free tier) |
+| Backfill existing tutorials | P2 | Script to generate audio for existing tutorials that have null `audio_url` — run once after feature is stable |
 
 ---
 
@@ -387,8 +411,9 @@ Run with: `npm test` or `npx vitest run`
 
 ### Phase 1 (Launch)
 - New tutorials automatically get audio generated during the processing pipeline
-- Listen button appears on tutorial detail pages and tutorial cards across all 5 pages
+- Listen button appears on tutorial detail pages and tutorial cards for tutorials with audio across all 5 pages
 - Audio plays reliably on desktop and mobile browsers (including iOS Safari)
+- Mobile lock screen controls work via MediaSession API
 - Audio generation failure does not block or delay tutorial publishing
 - Single-player enforcement works across multiple ListenButton instances
 - Kill switch can disable audio generation without a code deploy
