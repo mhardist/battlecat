@@ -39,7 +39,9 @@ Tutorials are 800-1500+ words. Not every user wants to read — some prefer to l
 
 | ID | Requirement | Status | Notes |
 |----|------------|--------|-------|
-| AUD-1 | Strip markdown body to clean plain text script (pure regex, no AI) | Not started | |
+| AUD-1 | Generate spoken audio script from tutorial body using Claude Sonnet AI. Prompt instructs the model to: rewrite for spoken delivery, describe code concepts in plain language (never read syntax), remove references to visual elements, convert tables to natural language, remove code-only instructional steps, preserve all educational content faithfully, output clean prose paragraphs only. | Not started | Replaces pure regex stripping — AI handles code-heavy tutorials, orphaned references, and context-aware rewriting that regex cannot |
+| AUD-1b | If AI script generation fails (API error, timeout, rate limit), skip audio generation entirely and return null. Do not fall back to regex-only stripping — ship quality audio or no audio. | Not started | Avoids serving awkward audio from regex-only processing of code-heavy tutorials |
+| AUD-1c | Apply regex sanitization (SAN-1 through SAN-8) as a post-AI safety net on the generated script before sending to TTS | Not started | Defense-in-depth: catches any stray URLs, HTML entities, or markdown artifacts the AI might leave in output |
 | AUD-2 | Chunk script at sentence boundaries (<=1900 chars per chunk, Deepgram 2000 char limit) | Not started | |
 | AUD-3 | Handle single sentences exceeding 1900 chars by splitting at last word boundary | Not started | |
 | AUD-4 | Send chunks to Deepgram Aura-2 TTS (`aura-2-athena-en`, MP3, 24000 sample rate) | Not started | |
@@ -53,17 +55,19 @@ Tutorials are 800-1500+ words. Not every user wants to read — some prefer to l
 | AUD-11 | Log structured outcome on success: `[audio] Generated for {slug}: {chunks} chunks, {bytes} bytes, {ms}ms` | Not started | Observability |
 | AUD-12 | If sanitized text is <50 characters after stripping, skip audio generation and return null. Log `[audio] Script too short ({n} chars), skipping` | Not started | Prevents generating near-empty audio files |
 
-### 3.2 Text Sanitization for Speech
+### 3.2 Text Sanitization — Post-AI Safety Net
+
+Applied to the AI-generated audio script (not the raw markdown). Defense-in-depth to catch any artifacts the AI might leave in its output.
 
 | ID | Requirement | Status | Notes |
 |----|------------|--------|-------|
-| SAN-1 | Remove URLs entirely | Not started | URLs are unlistenable |
-| SAN-2 | Remove code blocks (fenced and inline) — these are visual, not auditory content | Not started | |
+| SAN-1 | Remove URLs entirely | Not started | URLs are unlistenable — AI should omit these but regex catches stragglers |
+| SAN-2 | Remove code blocks (fenced and inline) | Not started | AI rewrites code as prose, but may occasionally leave backtick fragments |
 | SAN-3 | Remove image references (`![alt](url)`) | Not started | |
-| SAN-4 | Remove markdown table markup entirely — tables are visual content, not suited for audio | Not started | |
+| SAN-4 | Remove markdown table markup entirely | Not started | AI converts tables to prose, regex catches any leftover pipe characters |
 | SAN-5 | Collapse repeated whitespace and normalize line breaks | Not started | |
-| SAN-6 | Decode HTML entities (`&amp;` -> `&`, `&lt;` -> `<`, etc.) before stripping | Not started | |
-| SAN-7 | Strip any inline HTML tags (`<br>`, `<strong>`, etc.) | Not started | Some tutorials use HTML |
+| SAN-6 | Decode HTML entities (`&amp;` -> `&`, `&lt;` -> `<`, etc.) | Not started | |
+| SAN-7 | Strip any inline HTML tags (`<br>`, `<strong>`, etc.) | Not started | |
 | SAN-8 | Remove horizontal rules (`---`, `***`, `___`) | Not started | |
 
 ### 3.3 Pipeline Integration
@@ -147,7 +151,8 @@ Tutorials are 800-1500+ words. Not every user wants to read — some prefer to l
 
 ```ts
 generateTutorialAudio(body: string, slug: string): Promise<string | null>
-stripMarkdownToScript(markdown: string): string
+generateAudioScript(body: string): Promise<string | null>   // Claude Sonnet AI rewrite
+sanitizeScriptText(text: string): string                     // Post-AI regex safety net
 chunkText(text: string, maxChars?: number): string[]
 ```
 
@@ -166,18 +171,27 @@ chunkText(text: string, maxChars?: number): string[]
 Tutorial body (markdown)
     |
     v
-stripMarkdownToScript()     <- Pure regex, no AI
-    |  Removes: ## headers, **bold**, *italic*, `code`,
-    |  ```code blocks```, > blockquotes, [text](url) links,
-    |  --- rules, ![images], list markers (-, *, 1.)
+generateAudioScript()        <- Claude Sonnet AI
+    |  Rewrites tutorial for spoken delivery
+    |  Describes code in plain language (never reads syntax)
+    |  Removes visual references ("as shown above", "see the diagram")
+    |  Converts tables to natural language summaries
+    |  Removes code-only instructions ("copy this into your terminal")
+    |  Preserves all educational content faithfully
+    |  Outputs clean prose paragraphs
+    |  If AI call fails → return null, skip audio entirely
+    v
+AI-generated audio script
+    |
+    v
+sanitizeScriptText()         <- Post-AI regex safety net
+    |  Catches any artifacts AI might leave:
+    |  Removes: stray URLs, code backticks, image refs,
+    |  table pipe chars, HTML tags, horizontal rules
     |  Decodes HTML entities (&amp; etc.)
-    |  Strips inline HTML tags
-    |  Removes table markup entirely
-    |  Removes bare URLs
-    |  Keeps: plain sentence text
     |  Collapses: multiple newlines -> single newline
     v
-Plain text script (continuous prose)
+Clean spoken script
     |
     v
 textToSpeech()               <- Deepgram Aura-2 SDK (@deepgram/sdk)
@@ -218,19 +232,20 @@ Step 10: Mark submission as published
 [NEW] Log: [process] processSubmission completed in {ms}ms
 ```
 
-Image and audio generation run in parallel via `Promise.all` since they are independent operations writing to different columns. Hot news (step 8b) runs sequentially after since it's conditional. Total post-processing budget: ~10-18s of the 60s Vercel timeout (steps 1-7 consume ~15-30s for extraction + AI generation). Audio generation failure does not block tutorial publishing. Each step has an individual timeout to prevent cascading delays. Note: hot-news tutorials may see ~3s additional latency since step 8b now waits for both image and audio to complete (not just image).
+Image and audio generation run in parallel via `Promise.all` since they are independent operations writing to different columns. Audio generation includes two sequential steps internally: AI script generation (~3-5s via Claude Sonnet) followed by TTS (~7-13s via Deepgram), totaling ~10-18s — but this runs parallel with image generation (~10s), so combined wall time stays ~10-18s (max of the two). Hot news (step 8b) runs sequentially after since it's conditional. Total post-processing budget: ~10-18s of the 60s Vercel timeout (steps 1-7 consume ~15-30s for extraction + AI generation). Audio generation failure does not block tutorial publishing. Each step has an individual timeout to prevent cascading delays. Note: hot-news tutorials may see ~3s additional latency since step 8b now waits for both image and audio to complete (not just image).
 
 ### Key Architectural Decisions
 
 1. **Server-generated audio (not browser TTS)** — Consistent, high-quality voice output across all devices. Files generated once and cached permanently.
-2. **Sentence-boundary chunking** — Deepgram enforces 2000 char limit. Split at sentence boundaries (`. `, `! `, `? `, `.\n`) with 1900 char threshold. Single sentences >1900 chars split at last word boundary.
-3. **MP3 concatenation with header stripping** — Strip ID3 tags and MP3 headers from chunks 2+ before concatenation to prevent audible artifacts at chunk boundaries.
-4. **Parallel pipeline steps** — Image generation (step 8) and audio generation (step 8c) run concurrently via `Promise.all` in `processSubmission()`. Both are independent and non-blocking — failure of either does not block tutorial publishing.
-5. **Custom window event for single-player** — `"battlecat-audio-play"` event dispatched on play ensures only one ListenButton plays at a time across the page.
-6. **DOM-rendered `<audio>` element** — Hidden `<audio>` element rendered in DOM (not programmatic `new Audio()`). Required for iOS Safari which blocks `play()` calls not in a user gesture call stack.
-7. **Timestamped filenames for cache busting** — `tutorials/{slug}-{timestamp}.mp3` ensures browsers fetch fresh audio after regeneration. Matches existing image generation pattern.
-8. **Kill switch via `AUDIO_ENABLED` env var** — Audio generation skipped entirely if not set to `"true"`. Allows disabling without a code deploy.
-9. **Per-step timeout via `Promise.race`** — 20-second hard timeout on audio generation via `Promise.race([audioPromise, timeoutPromise])` prevents blowing the 60s Vercel function budget.
+2. **AI-generated audio script (not regex stripping)** — Claude Sonnet rewrites the tutorial body into a spoken script. Handles code-heavy tutorials by describing code in plain language, removes orphaned visual references, converts tables to prose. Regex sanitization applied as a post-AI safety net. If AI call fails, audio is skipped entirely (no fallback to regex-only stripping) — quality audio or no audio.
+3. **Sentence-boundary chunking** — Deepgram enforces 2000 char limit. Split at sentence boundaries (`. `, `! `, `? `, `.\n`) with 1900 char threshold. Single sentences >1900 chars split at last word boundary.
+4. **MP3 concatenation with header stripping** — Strip ID3 tags and MP3 headers from chunks 2+ before concatenation to prevent audible artifacts at chunk boundaries.
+5. **Parallel pipeline steps** — Image generation (step 8) and audio generation (step 8c) run concurrently via `Promise.all` in `processSubmission()`. Both are independent and non-blocking — failure of either does not block tutorial publishing.
+6. **Custom window event for single-player** — `"battlecat-audio-play"` event dispatched on play ensures only one ListenButton plays at a time across the page.
+7. **DOM-rendered `<audio>` element** — Hidden `<audio>` element rendered in DOM (not programmatic `new Audio()`). Required for iOS Safari which blocks `play()` calls not in a user gesture call stack.
+8. **Timestamped filenames for cache busting** — `tutorials/{slug}-{timestamp}.mp3` ensures browsers fetch fresh audio after regeneration. Matches existing image generation pattern.
+9. **Kill switch via `AUDIO_ENABLED` env var** — Audio generation skipped entirely if not set to `"true"`. Allows disabling without a code deploy.
+10. **Per-step timeout via `Promise.race`** — 20-second hard timeout on audio generation via `Promise.race([audioPromise, timeoutPromise])` prevents blowing the 60s Vercel function budget.
 
 ### Expected Audio Size
 
@@ -248,10 +263,10 @@ Image and audio generation run in parallel via `Promise.all` since they are inde
 
 | File | Description |
 |------|-------------|
-| `src/lib/generate-audio.ts` | Core audio generation module (markdown strip, sanitization, Deepgram TTS via `@deepgram/sdk`, Supabase upload) |
+| `src/lib/generate-audio.ts` | Core audio generation module (AI script generation via Claude Sonnet, post-AI regex sanitization, Deepgram TTS via `@deepgram/sdk`, Supabase upload) |
 | `src/components/ListenButton.tsx` | Client component — audio play/pause button with `icon` and `bar` variants, a11y support |
 | `src/db/migrations/001_add_audio_url.sql` | Versioned migration: `ALTER TABLE tutorials ADD COLUMN IF NOT EXISTS audio_url text;` |
-| `src/lib/__tests__/generate-audio.test.ts` | Unit tests for `stripMarkdownToScript`, `chunkText`, sanitization |
+| `src/lib/__tests__/generate-audio.test.ts` | Unit tests for `sanitizeScriptText`, `chunkText`; integration tests for AI script quality against seed tutorial bodies |
 | `vitest.config.ts` | Vitest configuration (test runner setup — must include `resolve.alias` for `@/` path mapping to `./src`) |
 
 ### Modified Files
@@ -278,7 +293,9 @@ Image and audio generation run in parallel via `Promise.all` since they are inde
 | `DEEPGRAM_API_KEY` not set | `generateTutorialAudio` returns null, logs warning. Tutorial publishes without audio. Listen button hidden. |
 | Deepgram API returns error | Returns null. Tutorial publishes without audio. |
 | Supabase Storage upload fails | Returns null. Tutorial publishes without audio. |
-| Tutorial body is empty or very short | Strip produces minimal text. If <50 chars after sanitization, skip audio generation and return null (AUD-12). Log and continue. |
+| AI script generation fails (API error, timeout, rate limit) | Skip audio entirely — return null. Do not fall back to regex-only stripping. Log `[audio] AI script generation failed: {error}`. Tutorial publishes without audio. |
+| Tutorial body is code-heavy (40%+ code) | AI rewrites code sections as plain language descriptions. Produces listenable content instead of disjointed fragments. |
+| Tutorial body is empty or very short | AI returns minimal script. If <50 chars after sanitization, skip audio generation and return null (AUD-12). Log and continue. |
 | Single sentence > 1900 characters | Fallback: split at last word boundary before 1900 chars. |
 | Audio generation exceeds 20s | `Promise.race` timeout fires, return null, log `[audio] Timeout after 20s`. Tutorial publishes without audio. |
 | Audio fails to load in browser | `<audio>` `error` event resets playing state. Display "Audio unavailable" text or error appearance for 3 seconds (FE-17), then return to idle. |
@@ -289,8 +306,9 @@ Image and audio generation run in parallel via `Promise.all` since they are inde
 | Existing Supabase tutorials (created before audio feature) | `audio_url` column defaults to null via migration. No listen button rendered on cards or detail page. No visual difference from pre-feature UI. |
 | Tutorial where audio generation failed or was skipped | `audio_url` remains null. Listen button hidden. Tutorial displays normally without any audio-related UI. |
 | Supabase Storage `audio` bucket not created | Upload fails gracefully. Returns null. |
-| Tutorial body contains tables | Table markup removed entirely — tables are visual content. |
-| Tutorial body contains bare URLs | URLs removed from speech text. |
+| Tutorial body contains tables | AI converts table data to natural language summaries. Regex safety net catches any leftover pipe characters. |
+| Tutorial body contains bare URLs | AI omits URLs. Regex safety net catches any stragglers. |
+| Tutorial body contains code snippets with surrounding prose | AI describes what the code does in plain language, removes "as shown above" / "copy this" references. No orphaned text. |
 | iOS Safari autoplay restriction | DOM `<audio>` element + `play()` in click handler call stack satisfies gesture requirement. |
 
 ---
@@ -310,10 +328,11 @@ Image and audio generation run in parallel via `Promise.all` since they are inde
 
 | Service | Cost model | Per tutorial estimate |
 |---------|-----------|---------------------|
+| Claude Sonnet (audio script) | Input/output tokens | ~$0.02 per tutorial (~6K chars input, ~4K chars output) |
 | Deepgram Aura-2 TTS | Pay-per-character ($0.030/1K chars) | ~$0.15-0.27 per tutorial (5000-9000 chars) |
 | Supabase Storage | 1GB free, then $0.021/GB | ~$0.0001 per MP3 file (3-5 MB) |
 
-Per-tutorial API cost is ~$0.20. Storage cost is the primary concern: at ~4MB average per tutorial, **100 tutorials consumes ~400MB (40% of Supabase's 1GB free tier)**. The ceiling is ~250 tutorials before requiring a paid plan.
+Per-tutorial API cost is ~$0.22 (Deepgram $0.20 + Claude $0.02). Storage cost is the primary concern: at ~4MB average per tutorial, **100 tutorials consumes ~400MB (40% of Supabase's 1GB free tier)**. The ceiling is ~250 tutorials before requiring a paid plan.
 
 **Storage scaling note:** Timestamped filenames mean regenerated audio accumulates old files — periodic manual cleanup of orphaned files recommended when storage exceeds 75% capacity (750MB).
 
@@ -337,15 +356,15 @@ Per-tutorial API cost is ~$0.20. Storage cost is the primary concern: at ~4MB av
 
 | ID | Test | Type |
 |----|------|------|
-| AT-1 | `stripMarkdownToScript` removes headers, bold, italic, links, code blocks, blockquotes, images, list markers, horizontal rules | Unit |
-| AT-2 | `stripMarkdownToScript` decodes HTML entities (`&amp;`, `&lt;`, `&gt;`) | Unit |
-| AT-3 | `stripMarkdownToScript` strips inline HTML tags | Unit |
-| AT-4 | `stripMarkdownToScript` removes bare URLs | Unit |
-| AT-5 | `stripMarkdownToScript` collapses multiple newlines to single newline | Unit |
-| AT-6 | `chunkText` splits at sentence boundaries under 1900 chars | Unit |
-| AT-7 | `chunkText` handles single sentence > 1900 chars (word boundary fallback) | Unit |
-| AT-8 | `chunkText` handles empty string input | Unit |
-| AT-9 | `stripMarkdownToScript` tested against 3 real tutorial bodies from seed data | Unit |
+| AT-1 | `sanitizeScriptText` removes stray URLs, code backticks, image refs, table pipes, HTML tags, horizontal rules | Unit |
+| AT-2 | `sanitizeScriptText` decodes HTML entities (`&amp;`, `&lt;`, `&gt;`) | Unit |
+| AT-3 | `sanitizeScriptText` strips inline HTML tags | Unit |
+| AT-4 | `sanitizeScriptText` collapses multiple newlines to single newline | Unit |
+| AT-5 | `chunkText` splits at sentence boundaries under 1900 chars | Unit |
+| AT-6 | `chunkText` handles single sentence > 1900 chars (word boundary fallback) | Unit |
+| AT-7 | `chunkText` handles empty string input | Unit |
+| AT-8 | `generateAudioScript` produces non-empty script from code-heavy tutorial body (mocked AI response for unit test) | Unit |
+| AT-9 | `generateAudioScript` returns null on AI failure (mocked error) | Unit |
 
 Run with: `npm test` or `npx vitest run`
 
