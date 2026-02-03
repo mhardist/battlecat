@@ -45,13 +45,14 @@ Tutorials are 800-1500+ words. Not every user wants to read — some prefer to l
 | AUD-3 | Handle single sentences exceeding 1900 chars by splitting at last word boundary | Not started | |
 | AUD-4 | Send chunks to Deepgram Aura-2 TTS (`aura-2-athena-en`, MP3, 24000 sample rate) | Not started | |
 | AUD-5 | Concatenate MP3 buffers from all chunks into single audio file | Not started | |
-| AUD-5b | Strip MP3 headers and ID3 tags from all chunks after the first before concatenation | Not started | Prevents clicks/pops at chunk boundaries |
+| AUD-5b | Strip MP3 headers and ID3 tags from all chunks after the first before concatenation | Not started | Prevents clicks/pops at chunk boundaries. MP3 concatenation via header stripping is sufficient for v1 since all chunks use identical Deepgram encoding settings. If audible artifacts are detected at chunk boundaries, consider using an audio library for proper frame-level joining in a future version. |
 | AUD-6 | Upload MP3 to Supabase Storage `audio` bucket at `tutorials/{slug}-{timestamp}.mp3` | Not started | Timestamp in filename for cache busting (matches image gen pattern) |
 | AUD-7 | Store public audio URL as `audio_url` on tutorials table | Not started | |
 | AUD-8 | Return `null` on any failure (missing API key, Deepgram error, upload error) — never throw | Not started | |
 | AUD-9 | Log errors with `[audio]` prefix for consistency with `[image]` and `[process]` prefixes | Not started | |
 | AUD-10 | Skip audio generation if `AUDIO_ENABLED` env var is not `"true"` — log `[audio] Audio generation disabled, skipping` and return null | Not started | Kill switch |
 | AUD-11 | Log structured outcome on success: `[audio] Generated for {slug}: {chunks} chunks, {bytes} bytes, {ms}ms` | Not started | Observability |
+| AUD-12 | If sanitized text is <50 characters after stripping, skip audio generation and return null. Log `[audio] Script too short ({n} chars), skipping` | Not started | Prevents generating near-empty audio files |
 
 ### 3.2 Text Sanitization for Speech
 
@@ -73,7 +74,7 @@ Tutorials are 800-1500+ words. Not every user wants to read — some prefer to l
 | PIP-1 | Run audio generation in parallel with image generation (step 8) using `Promise.all` in `processSubmission()`, before link/publish | Not started | Reduces combined time from ~17-23s to ~10-13s |
 | PIP-2 | Audio generation failure does not block tutorial publishing (non-fatal, same pattern as image) | Not started | |
 | PIP-3 | Always regenerate audio on merge — body is always overwritten, no change detection needed | Not started | ~$0.20 per call, acceptable for v1 |
-| PIP-4 | Audio generation step has a 20-second timeout — if exceeded, abort and return null | Not started | Prevents blowing the 60s Vercel budget. Use `Promise.race([audioPromise, timeoutPromise])` since Deepgram SDK may not support AbortSignal directly |
+| PIP-4 | Audio generation step has a 20-second timeout via `Promise.race` — if exceeded, return null | Not started | Prevents blowing the 60s Vercel budget. Use `Promise.race([audioPromise, timeoutPromise])` — simple and works regardless of SDK signal support |
 | PIP-5 | Log total `processSubmission` elapsed time at completion: `[process] processSubmission completed in {ms}ms` | Not started | Track budget usage |
 
 ### 3.4 Database
@@ -115,6 +116,8 @@ Tutorials are 800-1500+ words. Not every user wants to read — some prefer to l
 | FE-14 | Dynamic `aria-label` ("Play tutorial audio" / "Pause tutorial audio") on ListenButton | Not started | |
 | FE-15 | `aria-pressed` attribute reflecting current play state | Not started | |
 | FE-16 | Keyboard support — Enter/Space trigger play/pause, visible focus outline matching existing button styles | Not started | |
+| FE-17 | On audio load error, display brief "Audio unavailable" text or change button appearance to indicate failure. Reset after 3 seconds or on next interaction. | Not started | Error indicator UX |
+| FE-18 | Loading/buffering state between click and `canplay` event — subtle pulse animation or spinner on the icon. Three states: idle → loading → playing. | Not started | Loading state UX |
 
 ---
 
@@ -122,7 +125,7 @@ Tutorials are 800-1500+ words. Not every user wants to read — some prefer to l
 
 | ID | Requirement | Status | Notes |
 |----|------------|--------|-------|
-| NFR-1 | Audio generation completes within 20s per tutorial (hard timeout via AbortController) | Not started | |
+| NFR-1 | Audio generation completes within 20s per tutorial (hard timeout via `Promise.race`) | Not started | |
 | NFR-2 | New env vars required: `AUDIO_ENABLED` (kill switch) | Not started | |
 | NFR-3 | Site works without audio bucket — graceful degradation, listen buttons hidden | Not started | |
 | NFR-4 | All existing tutorials (seed and Supabase) work without audio — `audio_url` defaults to null, no listen button rendered anywhere (cards or detail page). The UI for tutorials without audio must be identical to the pre-feature state. | Not started | Covers seed tutorials, pre-existing Supabase tutorials, and any tutorial where audio generation failed or was skipped |
@@ -184,7 +187,7 @@ textToSpeech()               <- Deepgram Aura-2 SDK (@deepgram/sdk)
     |  Collects streaming response: response.getStream() + for await...of
     |  Strips MP3 headers from chunks 2+ before concat
     |  Concatenates MP3 buffers
-    |  20-second hard timeout via AbortController
+    |  20-second hard timeout via Promise.race
     v
 MP3 audio buffer
     |
@@ -228,7 +231,7 @@ Image and audio generation run in parallel via `Promise.all` since they are inde
 6. **DOM-rendered `<audio>` element** — Hidden `<audio>` element rendered in DOM (not programmatic `new Audio()`). Required for iOS Safari which blocks `play()` calls not in a user gesture call stack.
 7. **Timestamped filenames for cache busting** — `tutorials/{slug}-{timestamp}.mp3` ensures browsers fetch fresh audio after regeneration. Matches existing image generation pattern.
 8. **Kill switch via `AUDIO_ENABLED` env var** — Audio generation skipped entirely if not set to `"true"`. Allows disabling without a code deploy.
-9. **Per-step timeout** — 20-second hard timeout on audio generation prevents blowing the 60s Vercel function budget.
+9. **Per-step timeout via `Promise.race`** — 20-second hard timeout on audio generation via `Promise.race([audioPromise, timeoutPromise])` prevents blowing the 60s Vercel function budget.
 
 ### Expected Audio Size
 
@@ -276,10 +279,10 @@ Image and audio generation run in parallel via `Promise.all` since they are inde
 | `DEEPGRAM_API_KEY` not set | `generateTutorialAudio` returns null, logs warning. Tutorial publishes without audio. Listen button hidden. |
 | Deepgram API returns error | Returns null. Tutorial publishes without audio. |
 | Supabase Storage upload fails | Returns null. Tutorial publishes without audio. |
-| Tutorial body is empty or very short | Strip produces minimal text. Deepgram generates short audio. No special handling needed. |
+| Tutorial body is empty or very short | Strip produces minimal text. If <50 chars after sanitization, skip audio generation and return null (AUD-12). Log and continue. |
 | Single sentence > 1900 characters | Fallback: split at last word boundary before 1900 chars. |
-| Audio generation exceeds 20s | Abort via AbortController, return null, log `[audio] Timeout after 20s`. Tutorial publishes without audio. |
-| Audio fails to load in browser | `<audio>` `error` event resets playing state. Button returns to idle. |
+| Audio generation exceeds 20s | `Promise.race` timeout fires, return null, log `[audio] Timeout after 20s`. Tutorial publishes without audio. |
+| Audio fails to load in browser | `<audio>` `error` event resets playing state. Display "Audio unavailable" text or error appearance for 3 seconds (FE-17), then return to idle. |
 | User navigates away while audio playing | `useEffect` cleanup pauses audio and cleans up references. |
 | Multiple listen buttons on same page | Custom event `"battlecat-audio-play"` ensures only one plays at a time. |
 | Merged tutorial | Audio always regenerated on merge (body is always overwritten). New timestamped filename. Old file remains in storage (manual cleanup). |
@@ -383,6 +386,7 @@ Run with: `npm test` or `npx vitest run`
 6. **Verify new tutorial** — Submit a URL, confirm audio is generated and listen button appears
 7. **Verify** — Spot-check tutorials on all 5 pages, including mobile Safari
 8. **Monitor** — Watch Vercel function logs for `[audio]` lines, check success/failure counts and after() timing
+9. **Storage audit at +30 days** — Check audio bucket storage usage. If >500MB, run manual cleanup of orphaned files from regenerated tutorials.
 
 **Note:** Existing tutorials will not be backfilled with audio. Only new tutorials (and existing ones that receive a merge from new content) will get audio generated. This is intentional for v1 — a backfill script is a future consideration.
 
@@ -393,7 +397,7 @@ Run with: `npm test` or `npx vitest run`
 | Item | Priority | Notes |
 |------|----------|-------|
 | Playback speed control | P2 | Add 1x/1.5x/2x speed toggle to ListenButton |
-| Audio progress bar | P2 | Show playback position and duration |
+| Audio progress bar | P1 | Show playback position and duration (fast-follow) |
 | Download button | P3 | Allow users to download MP3 for offline listening |
 | Voice selection | P3 | Let admin choose from multiple Deepgram voices |
 | Audio-only feed | P4 | Podcast RSS feed with audio enclosures |
@@ -403,6 +407,7 @@ Run with: `npm test` or `npx vitest run`
 |  User preference | P3 | localStorage toggle to hide listen buttons site-wide |
 |  Multi-language voices | P4 | Abstract voice selection for future i18n support |
 | Storage monitoring | P3 | Alert when audio bucket exceeds 750MB (75% of free tier) |
+| Audio failure rate monitoring/alerting | P2 | Set up alerting when audio generation failure rate exceeds threshold in Vercel logs |
 | Backfill existing tutorials | P2 | Script to generate audio for existing tutorials that have null `audio_url` — run once after feature is stable |
 
 ---
