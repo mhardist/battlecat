@@ -99,7 +99,19 @@ Applied to the AI-generated audio script (not the raw markdown). Defense-in-dept
 | STO-3 | No upsert needed — each generation creates a unique filename due to timestamp | Not started | |
 | STO-4 | Old audio files are not auto-deleted on regeneration. Document manual cleanup procedure for storage maintenance. | Not started | Acceptable tradeoff for v1 |
 
-### 3.6 Frontend — ListenButton
+### 3.6 Local Development Audio
+
+Pre-generated audio files for seed tutorials enable local UI development and testing without access to Deepgram, Supabase, or Anthropic APIs.
+
+| ID | Requirement | Status | Notes |
+|----|------------|--------|-------|
+| DEV-1 | Dev-only API route `/api/tts/[slug]` serves MP3 files from `src/data/tts/audio/` | Not started | Returns 404 in production (`NODE_ENV === "production"` guard). Streams file with `Content-Type: audio/mpeg`. |
+| DEV-2 | `withDevAudio()` helper injects `audio_url: "/api/tts/{slug}"` on seed tutorials when `NODE_ENV !== "production"` | Not started | Applied in data layer (getAllTutorials, getTutorialBySlug, etc.). Seeds keep `audio_url: null` in source. |
+| DEV-3 | Seed tutorials show working listen buttons in local dev with playable audio | Not started | Enables full UI testing without any external API keys |
+| DEV-4 | In production, seed tutorials remain unchanged — `audio_url: null`, no listen button | Not started | `withDevAudio` is a no-op in prod; API route returns 404 in prod |
+| DEV-5 | Pre-generated audio files exist for all 10 seed tutorials at `src/data/tts/audio/{slug}.mp3` | Not started | Already generated — text scripts at `src/data/tts/text/{slug}.txt` |
+
+### 3.7 Frontend — ListenButton
 
 | ID | Requirement | Status | Notes |
 |----|------------|--------|-------|
@@ -268,6 +280,7 @@ Image and audio generation run in parallel via `Promise.all` since they are inde
 | `src/db/migrations/001_add_audio_url.sql` | Versioned migration: `ALTER TABLE tutorials ADD COLUMN IF NOT EXISTS audio_url text;` |
 | `src/lib/__tests__/generate-audio.test.ts` | Unit tests for `sanitizeScriptText`, `chunkText`; integration tests for AI script quality against seed tutorial bodies |
 | `vitest.config.ts` | Vitest configuration (test runner setup — must include `resolve.alias` for `@/` path mapping to `./src`) |
+| `src/app/api/tts/[slug]/route.ts` | Dev-only API route — serves MP3 from `src/data/tts/audio/`, returns 404 in production |
 
 ### Modified Files
 
@@ -280,7 +293,8 @@ Image and audio generation run in parallel via `Promise.all` since they are inde
 | `src/components/TutorialActions.tsx` | Add `audioUrl` prop + ListenButton bar between Bookmark and Mark Complete |
 | `src/app/tutorials/[slug]/page.tsx` | Pass `audioUrl` prop to TutorialActions |
 | `.env.example` | Add `AUDIO_ENABLED` and `TOGETHER_API_KEY` (existing gap) |
-| `src/data/seed-tutorials.ts` | Add `audio_url: null` to all seed tutorial objects |
+| `src/data/seed-tutorials.ts` | Add `audio_url: null` to all seed tutorial objects + `withDevAudio()` helper that injects local audio URLs in dev |
+| `src/data/tutorials.ts` | Wrap seed tutorial functions with `withDevAudio()` so dev audio URLs propagate to all pages |
 | `package.json` | Add `vitest` dev dependency and `"test"` script |
 
 ---
@@ -302,7 +316,10 @@ Image and audio generation run in parallel via `Promise.all` since they are inde
 | User navigates away while audio playing | `useEffect` cleanup pauses audio and cleans up references. |
 | Multiple listen buttons on same page | Custom event `"battlecat-audio-play"` ensures only one plays at a time. |
 | Merged tutorial | Audio always regenerated on merge (body is always overwritten). New timestamped filename. Old file remains in storage (manual cleanup). |
-| Seed tutorials (no Supabase) | `audio_url` is null. Listen button not rendered. |
+| Seed tutorials in production | `audio_url` is null (source value). `withDevAudio` is no-op in prod. Listen button not rendered. |
+| Seed tutorials in local dev | `withDevAudio()` injects `audio_url: "/api/tts/{slug}"`. Listen button rendered. Audio served from `src/data/tts/audio/`. |
+| `/api/tts/[slug]` called in production | Returns 404 immediately (`NODE_ENV === "production"` guard). No file access. |
+| `/api/tts/[slug]` called with nonexistent slug | Returns 404 (file not found). |
 | Existing Supabase tutorials (created before audio feature) | `audio_url` column defaults to null via migration. No listen button rendered on cards or detail page. No visual difference from pre-feature UI. |
 | Tutorial where audio generation failed or was skipped | `audio_url` remains null. Listen button hidden. Tutorial displays normally without any audio-related UI. |
 | Supabase Storage `audio` bucket not created | Upload fails gracefully. Returns null. |
@@ -342,6 +359,13 @@ Per-tutorial API cost is ~$0.22 (Deepgram $0.20 + Claude $0.02). Storage cost is
 
 ### 10.1 Prerequisites
 
+**For unit tests (10.2) and browser verification (10.3) — no API keys needed:**
+1. Install dependencies: `npm install`
+2. Start the dev server: `npm run dev`
+3. Seed tutorials automatically get audio URLs via `withDevAudio()` in dev mode
+4. Pre-generated MP3 files served via `/api/tts/[slug]` route
+
+**For manual/pipeline testing (10.4) — requires API keys:**
 1. Ensure `DEEPGRAM_API_KEY` is set in `.env.local`
 2. Set `AUDIO_ENABLED=true` in `.env.local`
 3. Create the `audio` bucket in Supabase Dashboard: Storage -> New bucket -> Name: `audio`, Public: Yes
@@ -349,8 +373,6 @@ Per-tutorial API cost is ~$0.22 (Deepgram $0.20 + Claude $0.02). Storage cost is
    ```sql
    ALTER TABLE tutorials ADD COLUMN IF NOT EXISTS audio_url text;
    ```
-5. Install test dependencies: `npm install`
-6. Start the dev server: `npm run dev`
 
 ### 10.2 Automated Tests
 
@@ -368,7 +390,31 @@ Per-tutorial API cost is ~$0.22 (Deepgram $0.20 + Claude $0.02). Storage cost is
 
 Run with: `npm test` or `npx vitest run`
 
-### 10.3 Manual Testing — Local
+### 10.3 Browser Verification — Claude Chrome Extension (Local Dev)
+
+Claude Code uses its Chrome browser extension to visually verify listen button functionality on the local dev server. This replaces manual testing for seed tutorial audio during development. No external API keys required — uses pre-generated audio via the dev-only `/api/tts/[slug]` route.
+
+**Prerequisites:**
+1. Dev server running (`npm run dev`)
+2. Seed tutorials loaded with dev audio URLs (`withDevAudio()` active in dev)
+
+**Verification Script:**
+
+| Step | Page | Verify | On Failure |
+|------|------|--------|------------|
+| BV-1 | `/browse` | Each seed tutorial card shows a listen icon below the bookmark icon | Check TutorialCard.tsx — ListenButton should render when `audioUrl` is truthy |
+| BV-2 | `/browse` | Click a listen icon → icon changes to pause state, audio plays | Check ListenButton click handler, `<audio>` element src, play() call |
+| BV-3 | `/browse` | Click a different card's listen icon → first audio stops, second plays | Check `"battlecat-audio-play"` custom event dispatch and listener |
+| BV-4 | `/tutorials/{any-seed-slug}` | Listen bar appears between Bookmark and Mark Complete buttons | Check TutorialActions.tsx — `audioUrl` prop passed, ListenButton bar variant rendered |
+| BV-5 | `/tutorials/{any-seed-slug}` | Click listen bar → audio plays. Click again → audio pauses | Check play/pause toggle logic in ListenButton |
+| BV-6 | `/search` (search for "prompt") | Listen icon on result cards | Check that search results pass `audio_url` through to TutorialCard |
+| BV-7 | `/bookmarks` (after bookmarking a seed tutorial) | Listen icon on bookmarked cards | Check bookmarks page passes tutorial data including `audio_url` |
+| BV-8 | `/level-up` | Listen icon on recommended tutorial cards | Check level-up page passes tutorial data including `audio_url` |
+| BV-9 | Start audio on `/browse`, navigate to `/tutorials/{slug}` | Audio stops on navigation | Check `useEffect` cleanup in ListenButton |
+
+**On any failure:** Identify the root cause in the code, fix it, and re-run the failing verification step.
+
+### 10.4 Manual Testing — Local (Requires API Keys)
 
 | ID | Test | Steps |
 |----|------|-------|
@@ -383,7 +429,7 @@ Run with: `npm test` or `npx vitest run`
 | T-9 | iOS Safari | Open on iOS Safari. Tap listen button. Verify audio plays (not blocked by autoplay policy). |
 | T-9b | Lock screen controls | iOS/Android — start playing audio, lock phone. Verify lock screen shows play/pause controls with tutorial title. Verify pause/resume from lock screen works. |
 
-### 10.4 Deployed Testing (Vercel / battlecat.ai)
+### 10.5 Deployed Testing (Vercel / battlecat.ai)
 
 | ID | Test | Steps |
 |----|------|-------|
