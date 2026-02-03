@@ -1,0 +1,29 @@
+Custom GPTs and AI Memory: Stop Repeating Yourself
+
+How to use Custom GPTs, Claude Projects, and memory features to create AI assistants that already know who you are and what you need.
+
+The problem with starting over.
+
+Every time you open a new chat, you lose all context. You re-explain your role, your preferences, your constraints. That's wasted time and worse output. This is the L0 trap.
+
+Level 1: Teach the AI who you are.
+
+L1 is about giving up anonymity and investing time to teach the AI about you. The payoff is massive — responses that actually fit your situation without you having to explain it every time.
+
+How to do it.
+
+Custom GPTs (OpenAI).
+
+Create a GPT pre-loaded with your context: role, industry, communication style, common tasks. Share it with your team or keep it private.
+
+Claude Projects.
+
+Upload documents, set project instructions, and chat within a persistent context. Claude remembers the project scope across conversations.
+
+The Grocery Test.
+
+Ask your AI to make you a grocery list. If it gives you a generic list, you're at L0. If it knows you're vegetarian, shop at Trader Joe's, and cook for two — that's L1.
+
+What you give up.
+
+Anonymity. You have to share real information about yourself. But the trade is worth it: AI that actually helps instead of generically responds.

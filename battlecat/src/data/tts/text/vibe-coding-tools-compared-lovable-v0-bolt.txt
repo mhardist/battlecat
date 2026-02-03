@@ -1,0 +1,76 @@
+I Tested Every Vibe Coding Tool — Here's Which One to Start With
+
+Lovable, v0, Bolt, and Replit all promise to turn your words into working apps. After building the same project on each, here's what actually works — and where each tool falls apart.
+
+The Promise: Describe an App, Get a Working App.
+
+Vibe coding is the L2 superpower: you describe what you want in plain English, and AI generates a fully functional application. No syntax, no boilerplate, no Stack Overflow rabbit holes. You design, AI builds.
+
+But which tool should you actually use? They all sound the same in their marketing. Here's what happens when you test them with real projects.
+
+The best vibe coding tool isn't the one with the most features — it's the one that gets you to a working prototype fastest with the fewest dead ends.
+
+The Tools, Ranked for Beginners.
+
+Lovable — Best All-Around Starting Point.
+
+What it does: Full-stack app generation from a text description. Handles frontend, backend, database, auth, and deployment in one flow.
+
+What surprised me: The UI quality is genuinely impressive out of the box. It generates clean, responsive layouts that look professional without tweaking. It also handles Supabase integration natively, so you get real data persistence without configuring anything.
+
+Where it struggles: Complex business logic. Once your app needs multi-step workflows or nuanced conditional logic, you'll hit limits. Good for MVPs, tough for production apps.
+
+Best for: Complete web apps, dashboards, CRUD tools, internal tools.
+
+v0 by Vercel — Best for UI Components.
+
+What it does: Converts prompts into React components using shadcn/ui and Tailwind CSS.
+
+What surprised me: The component quality is exceptional. If you need a specific UI element — a pricing table, a data grid, a settings panel — v0 often nails it on the first try.
+
+Where it struggles: It generates components, not full apps. You need to know how to wire them together, or use it alongside another tool.
+
+Best for: Frontend components, landing pages, design system pieces.
+
+Bolt.new — Best for Creative Projects.
+
+What it does: Rapid prototyping with live preview in the browser. Open source.
+
+Where it struggles: Production readiness. Bolt is amazing for exploring ideas but the generated code often needs significant cleanup before shipping.
+
+Best for: Quick iterations, hackathon projects, exploring ideas visually.
+
+Replit — Best for Learning.
+
+What it does: Full cloud IDE with an AI agent that can build and deploy apps from natural language.
+
+What surprised me: The agent mode is powerful. It doesn't just generate code — it sets up the project, installs dependencies, configures the environment, and deploys. You can watch it work and learn from its decisions.
+
+Where it struggles: Can be overwhelming for pure beginners. The IDE interface is powerful but complex.
+
+Best for: People who want to understand what's happening under the hood.
+
+The L1 → L2 Mindset Shift.
+
+Moving from L1 (personalized chat) to L2 (building things) requires a mental model change:
+
+- L1 thinking: "Help me write an email about X"
+- L2 thinking: "Build me a dashboard that shows Y with filters for Z"
+
+At L2, your value isn't typing code — it's having a clear vision of what should exist. The clearer your spec, the better the output.
+
+Three rules for better vibe coding prompts:
+
+- Be specific about structure: "A two-column layout with a sidebar showing filters and a main area showing cards" beats "a nice-looking page"
+- Describe interactions: "When I click a card, it expands to show full details with an edit button" gives the AI something to build
+- Iterate in small steps: Don't try to describe the entire app at once. Build one screen, refine it, then add the next
+
+The Recommended Path.
+
+Start with Lovable to build your first complete app. Use v0 when you need a specific, polished UI component. Try Bolt for quick experiments and creative exploration. Graduate to Replit when you want to learn what's happening under the hood.
+
+And when your prototype needs real engineering — authentication, payments, production deployment — that's when you've hit the L2→L3 cliff. That's a different tutorial.
+
+The Bottom Line.
+
+You can go from idea to working, deployed app in an afternoon. That's not an exaggeration — it's the new baseline. The question isn't whether vibe coding works; it's which tool fits your project. Start with Lovable, iterate fast, and don't let perfect be the enemy of shipped.

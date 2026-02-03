@@ -1,0 +1,47 @@
+The Gate: Security, Reliability, and Systems Thinking
+
+The transition from L3 to L4 is gated. Here's what you need to master before you can orchestrate multiple AI agents as an organization.
+
+Why L4 is gated.
+
+You can stumble into L1 or L2. L3 requires a mindset shift. But L4 requires demonstrated competence. If your individual agents aren't secure and reliable, orchestrating multiple agents will multiply your problems.
+
+The three pillars of The Gate.
+
+- Security.
+
+- Authentication and authorization for every endpoint
+
+- Encryption at rest and in transit
+
+- Access control: agents should have minimum necessary permissions
+
+- Secret management: no keys in code, ever
+
+- Audit trails: know what every agent did and when
+
+- Reliability.
+
+- Error handling that degrades gracefully
+
+- Automated testing (unit, integration, e2e)
+
+- Monitoring and alerting
+
+- Circuit breakers for external services
+
+- Rollback capability for deployments
+
+- Systems Thinking.
+
+- Architecture decomposition: breaking complex systems into manageable pieces
+
+- Interface design: how components communicate
+
+- Scaling patterns: what breaks when load increases?
+
+- Integration testing: the system works together, not just individually
+
+How to prepare.
+
+Master L3 first. Ship real products with single agents. Build confidence in code review, testing, and deployment. Then start designing systems.

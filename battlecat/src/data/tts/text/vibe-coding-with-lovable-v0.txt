@@ -1,0 +1,33 @@
+Vibe Coding: Build Real Apps Without Writing Code
+
+How tools like Lovable, v0, and Bolt let you describe an app and get a working prototype in minutes. This is L2 — you design, AI builds.
+
+What is vibe coding?
+
+Vibe coding is describing what you want in natural language and having AI generate a working application. You're the designer; AI is the builder. That's the L2 relationship.
+
+The tools.
+
+Lovable.
+
+Full-stack app generation from a description. Handles frontend, backend, database, and deployment. Best for: complete web apps with authentication and data.
+
+v0 by Vercel.
+
+UI component generation with React/Next.js. Best for: frontend components, landing pages, design system pieces.
+
+Bolt.
+
+Rapid prototyping with live preview. Best for: quick iterations, exploring ideas visually.
+
+Replit.
+
+Full development environment with AI assistance. Best for: when you want to see and edit the code alongside the AI.
+
+The L2 mindset.
+
+At L2, you stop doing the work and start specifying the work. Your value is clarity — knowing what you want built, not how to build it. The clearer your spec, the better the output.
+
+What L2 gets you.
+
+SHOW IT. Prototypes, demos, proof of concepts. You can go from idea to clickable demo in an afternoon. That's a competitive advantage most people haven't realized yet.
