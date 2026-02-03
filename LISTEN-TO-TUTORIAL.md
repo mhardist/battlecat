@@ -3,7 +3,7 @@
 **Feature:** Text-to-Speech Audio for Tutorials
 **Product:** Battlecat AI (battlecat.ai)
 **Branch:** `bkirsch-listen-to-tutorial`
-**Version:** 3.1
+**Version:** 1.0
 **Date:** February 2, 2026
 
 ---
