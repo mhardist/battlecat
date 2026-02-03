@@ -194,3 +194,13 @@ When deploying to serverless, these replacements work:
 - `useAchievements` — Unlocked IDs + tracking counters
 
 **Lesson:** When a codebase has multiple localStorage-backed hooks, establish the pattern early and follow it consistently. The two-effect pattern (load → persist) with a `loaded` guard prevents hydration mismatches and race conditions.
+
+---
+
+## 16. Tailwind v4 Dark Mode: `@custom-variant` Replaces `darkMode: 'class'`
+
+**Problem:** Tailwind v4 defaults `dark:` utilities to `@media (prefers-color-scheme: dark)`. The app toggles dark mode via a `.dark` class on `<html>`, so all `dark:` utility classes (`dark:bg-*`, `dark:text-*`, `dark:prose-invert`, etc.) were ignored. A `@media (prefers-color-scheme: dark)` CSS block duplicating custom properties was used as a workaround, but it only affected the CSS custom properties — Tailwind utility classes still didn't respond to the `.dark` class.
+
+**Fix:** Added `@custom-variant dark (&:where(.dark, .dark *));` to `globals.css` (after the `@plugin` import) and removed the redundant `@media (prefers-color-scheme: dark)` block.
+
+**Lesson:** In Tailwind v4, class-based dark mode requires an explicit `@custom-variant` declaration — this replaces the `darkMode: 'class'` setting from `tailwind.config.js` in Tailwind v3. Without it, `dark:` prefixed utilities only respond to the OS-level media query and ignore any `.dark` class on the document.
