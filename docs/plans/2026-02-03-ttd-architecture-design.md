@@ -3,7 +3,6 @@
 **Feature:** Text-to-Speech Audio for Tutorials (LISTEN-TO-PRD.md)
 **Product:** Battlecat AI (battlecat.ai)
 **Date:** February 3, 2026
-**Branch:** `bkirsch-tasks-with-prd`
 
 ---
 
