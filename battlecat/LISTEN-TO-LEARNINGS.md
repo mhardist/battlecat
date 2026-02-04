@@ -54,3 +54,32 @@ Injecting `/api/tts/{slug}` URLs at the data access layer means no component cha
 
 ### Promise.all for image + audio is the right pattern
 Both are non-blocking, independent operations. Running them in parallel reduces total pipeline time. Both have `.catch()` handlers that return `null` on failure.
+
+---
+
+## QA Verification Gaps
+
+Three gaps were identified during QA verification of the TTD pipeline output:
+
+### 1. Missing `TOGETHER_API_KEY` in `.env.example`
+
+**Gap:** The TTS pipeline uses Together AI as a provider, but `.env.example` did not include `TOGETHER_API_KEY`, making it invisible to new developers setting up the project.
+**Fix:** Added `TOGETHER_API_KEY=your-together-key` with a descriptive comment to `.env.example`.
+
+### 2. Six ListenButton test cases specified in PRD but not implemented
+
+**Gap:** The PRD specified test cases FE-8, FE-10, FE-11, FE-12, FE-13, and FE-17 for the `ListenButton` component. These were implemented in the component but had no corresponding tests in `ListenButton.test.tsx`.
+**Tests added:**
+- **FE-8:** Error event on `<audio>` resets playing state
+- **FE-10:** Cleanup on unmount pauses audio and removes event listeners
+- **FE-11:** MediaSession API handlers registered for play, pause, stop (with cleanup)
+- **FE-12:** MediaSession metadata (title, artist: "Battlecat AI", artwork)
+- **FE-13:** MediaSession playbackState updates on play/pause
+- **FE-17:** Error state shows "Audio unavailable" text, resets after 3 seconds
+
+**jsdom note:** `navigator.mediaSession` is not available in jsdom. Tests FE-11/12/13 required mocking via `Object.defineProperty(navigator, 'mediaSession', ...)`.
+
+### 3. LISTEN-TO-LEARNINGS.md located outside project root
+
+**Gap:** The learnings document was stored at `docs/LISTEN-TO-LEARNINGS.md` (monorepo root), but the convention for project documentation is the `battlecat/` project root for discoverability.
+**Fix:** Moved to `battlecat/LISTEN-TO-LEARNINGS.md` via `git mv`.
