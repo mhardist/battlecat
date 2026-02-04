@@ -132,6 +132,8 @@ export default async function TutorialPage({ params }: Props) {
         tutorialTitle={tutorial.title}
         tutorialSlug={tutorial.slug}
         isStale={tutorial.is_stale}
+        audioUrl={tutorial.audio_url ?? undefined}
+        imageUrl={tutorial.image_url ?? undefined}
       />
 
       {/* Body — rendered markdown */}

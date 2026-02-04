@@ -5,12 +5,15 @@ import { useBookmarks } from "@/hooks/useBookmarks";
 import { useProgress } from "@/hooks/useProgress";
 import { useAchievementContext } from "./AchievementProvider";
 import { MossManBadge } from "./MossManBadge";
+import { ListenButton } from "./ListenButton";
 
 interface TutorialActionsProps {
   tutorialId: string;
   tutorialTitle: string;
   tutorialSlug: string;
   isStale?: boolean;
+  audioUrl?: string;
+  imageUrl?: string;
 }
 
 export function TutorialActions({
@@ -18,6 +21,8 @@ export function TutorialActions({
   tutorialTitle,
   tutorialSlug,
   isStale = false,
+  audioUrl,
+  imageUrl,
 }: TutorialActionsProps) {
   const { toggle: toggleBookmark, isBookmarked } = useBookmarks();
   const { getEntry, toggleCompleted, setNotes, isCompleted } = useProgress();
@@ -78,6 +83,16 @@ export function TutorialActions({
           </svg>
           {bookmarked ? "Bookmarked" : "Bookmark"}
         </button>
+
+        {/* Listen */}
+        {audioUrl && (
+          <ListenButton
+            audioUrl={audioUrl}
+            variant="bar"
+            tutorialTitle={tutorialTitle}
+            imageUrl={imageUrl}
+          />
+        )}
 
         {/* Mark Complete */}
         <button
