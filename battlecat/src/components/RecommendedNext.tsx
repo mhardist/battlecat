@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Tutorial } from "@/types";
 import { useImpactScore } from "@/hooks/useImpactScore";
@@ -17,9 +18,18 @@ interface RecommendedNextProps {
  * sorted by impact score, excluding completed and stale tutorials.
  */
 export function RecommendedNext({ tutorials, limit = 3 }: RecommendedNextProps) {
+  const [mounted, setMounted] = useState(false);
   const { getRecommended, getScore } = useImpactScore();
-  const recommended = getRecommended(tutorials, limit);
 
+  // Delay rendering until client-side to avoid hydration mismatch
+  // (scores depend on localStorage which isn't available during SSR)
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) return null;
+
+  const recommended = getRecommended(tutorials, limit);
   if (recommended.length === 0) return null;
 
   return (
