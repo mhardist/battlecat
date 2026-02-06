@@ -1,7 +1,6 @@
 "use client";
 
 import { useAchievementContext } from "@/components/AchievementProvider";
-import { useAchievements } from "@/hooks/useAchievements";
 import {
   ALL_ACHIEVEMENTS,
   POWER_TIERS,
@@ -31,8 +30,7 @@ const CATEGORY_ORDER: AchievementCategory[] = [
 ];
 
 export default function AchievementsPage() {
-  const { totalPoints, unlockedCount } = useAchievementContext();
-  const { isUnlocked, loaded } = useAchievements();
+  const { totalPoints, unlockedCount, isUnlocked, loaded } = useAchievementContext();
 
   const tier = getPowerTier(totalPoints);
   const nextTier = getNextTier(totalPoints);
