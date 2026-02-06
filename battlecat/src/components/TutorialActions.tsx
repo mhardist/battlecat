@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { useBookmarks } from "@/hooks/useBookmarks";
 import { useProgress } from "@/hooks/useProgress";
 import { useAchievementContext } from "./AchievementProvider";
@@ -19,15 +19,17 @@ export function TutorialActions({
   tutorialSlug,
   isStale = false,
 }: TutorialActionsProps) {
-  const { toggle: toggleBookmark, isBookmarked } = useBookmarks();
-  const { getEntry, toggleCompleted, setNotes, isCompleted } = useProgress();
+  const { toggle: toggleBookmark, isBookmarked, loaded: bookmarksLoaded } = useBookmarks();
+  const { getEntry, toggleCompleted, setNotes, isCompleted, loaded: progressLoaded } = useProgress();
   const { recheckAchievements } = useAchievementContext();
   const [showNotes, setShowNotes] = useState(false);
   const [copied, setCopied] = useState(false);
 
+  // Wait for localStorage to load before showing actual values
+  const clientReady = bookmarksLoaded && progressLoaded;
   const entry = getEntry(tutorialId);
-  const bookmarked = isBookmarked(tutorialId);
-  const completed = isCompleted(tutorialId);
+  const bookmarked = clientReady ? isBookmarked(tutorialId) : false;
+  const completed = clientReady ? isCompleted(tutorialId) : false;
 
   const handleShare = async () => {
     const url = `${window.location.origin}/tutorials/${tutorialSlug}`;
@@ -129,7 +131,7 @@ export function TutorialActions({
         <button
           onClick={() => setShowNotes(!showNotes)}
           className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
-            entry.notes
+            clientReady && entry.notes
               ? "border-bc-primary bg-bc-primary/10 text-bc-primary"
               : "border-bc-border text-bc-text-secondary hover:border-bc-primary hover:text-bc-primary"
           }`}
@@ -147,7 +149,7 @@ export function TutorialActions({
               d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
             />
           </svg>
-          {entry.notes ? "View Notes" : "Add Notes"}
+          {clientReady && entry.notes ? "View Notes" : "Add Notes"}
         </button>
 
         {/* Mark Stale (Moss Man) */}
