@@ -25,10 +25,14 @@ interface AchievementContextValue {
   trackQuizComplete: () => void;
   /** Manually trigger an achievement check (e.g., after bookmark/rate/complete) */
   recheckAchievements: () => void;
+  /** Check if an achievement is unlocked */
+  isUnlocked: (achievementId: string) => boolean;
   /** Total Points of Power */
   totalPoints: number;
   /** Number of unlocked achievements */
   unlockedCount: number;
+  /** Whether achievement data has loaded from localStorage */
+  loaded: boolean;
 }
 
 const AchievementContext = createContext<AchievementContextValue>({
@@ -36,8 +40,10 @@ const AchievementContext = createContext<AchievementContextValue>({
   trackSubmission: () => {},
   trackQuizComplete: () => {},
   recheckAchievements: () => {},
+  isUnlocked: () => false,
   totalPoints: 0,
   unlockedCount: 0,
+  loaded: false,
 });
 
 export function useAchievementContext() {
@@ -164,8 +170,10 @@ export function AchievementProvider({ children }: { children: ReactNode }) {
         trackSubmission,
         trackQuizComplete,
         recheckAchievements,
+        isUnlocked: achievements.isUnlocked,
         totalPoints: achievements.totalPoints,
         unlockedCount: achievements.unlocked.length,
+        loaded: achievements.loaded,
       }}
     >
       {children}
