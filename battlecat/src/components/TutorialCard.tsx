@@ -5,6 +5,7 @@ import { LevelBadge } from "./LevelBadge";
 import { ToolBadge } from "./ToolBadge";
 import { StaleOverlay } from "./MossManBadge";
 import { ImpactScoreBadge } from "./ImpactScoreBadge";
+import { ListenButton } from "./ListenButton";
 
 interface TutorialCardProps {
   tutorial: Tutorial;
@@ -137,31 +138,40 @@ export function TutorialCard({
             )}
           </div>
 
-          {showBookmark && onToggleBookmark && (
-            <button
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                onToggleBookmark(tutorial.id);
-              }}
-              className="shrink-0 p-1 text-bc-text-secondary hover:text-bc-secondary transition-colors"
-              aria-label={isBookmarked ? "Remove bookmark" : "Add bookmark"}
-            >
-              <svg
-                className="h-5 w-5"
-                fill={isBookmarked ? "currentColor" : "none"}
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
+          <div className="flex flex-col items-center gap-1 shrink-0">
+            {showBookmark && onToggleBookmark && (
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onToggleBookmark(tutorial.id);
+                }}
+                className="shrink-0 p-1 text-bc-text-secondary hover:text-bc-secondary transition-colors"
+                aria-label={isBookmarked ? "Remove bookmark" : "Add bookmark"}
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
-                />
-              </svg>
-            </button>
-          )}
+                <svg
+                  className="h-5 w-5"
+                  fill={isBookmarked ? "currentColor" : "none"}
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
+                  />
+                </svg>
+              </button>
+            )}
+            {tutorial.audio_url && (
+              <ListenButton
+                audioUrl={tutorial.audio_url}
+                variant="icon"
+                tutorialTitle={tutorial.title}
+              />
+            )}
+          </div>
         </div>
       </div>
     </Link>

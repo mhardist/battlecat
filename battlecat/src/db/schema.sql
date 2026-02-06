@@ -30,6 +30,7 @@ create table if not exists tutorials (
   source_urls text[] not null default '{}',
   source_count integer not null default 1,
   image_url text,
+  audio_url text,
   is_stale boolean not null default false,
   is_hot_news boolean not null default false,
   hot_news_headline text,

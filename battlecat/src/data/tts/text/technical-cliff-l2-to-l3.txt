@@ -1,0 +1,39 @@
+The Technical Cliff: Getting From L2 to L3
+
+The hardest level transition. Why prototyping tools can't ship production code, and what you need to learn to cross the gap.
+
+The gap is real.
+
+L2 tools (Lovable, v0, Bolt) generate working prototypes. They look great in demos. But they don't handle authentication properly, they don't sanitize inputs, they don't handle edge cases, and they don't scale.
+
+What production requires that prototypes skip.
+
+- Authentication & authorization: Who can access what? How are tokens stored?
+
+- Data integrity: What happens when two users edit the same record?
+
+- Error handling: What does the user see when the API is down?
+
+- Security: SQL injection, XSS, CSRF — prototypes rarely handle these
+
+- Payment processing: Real money requires real engineering
+
+How to cross the cliff.
+
+You don't need to become a software engineer. But you need to understand enough to supervise one — even if that "engineer" is an AI agent.
+
+The minimum viable engineering knowledge.
+
+- Understand what a database does and why schema design matters
+
+- Know the difference between client-side and server-side code
+
+- Understand authentication flows (OAuth, JWT, sessions)
+
+- Know what environment variables are and why secrets can't be in code
+
+- Understand git branching and why you don't push to main
+
+The reward.
+
+Cross the cliff and you can SHIP IT. Not just show it — ship it. That's the difference between a demo and a product.

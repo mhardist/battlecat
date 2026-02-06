@@ -1,6 +1,7 @@
 import { extractContent } from "@/lib/extract";
 import { generateTutorial, mergeTutorial, generateHotNewsBlurb } from "@/lib/ai";
 import { generateTutorialImage } from "@/lib/generate-image";
+import { generateTutorialAudio } from "@/lib/generate-audio";
 import { createServerClient } from "@/lib/supabase";
 
 interface ProcessOptions {
@@ -78,6 +79,8 @@ export async function processSubmission(submissionId: string, options?: ProcessO
       .maybeSingle();
 
     let tutorialId: string;
+    let audioBody: string;
+    let audioSlug: string;
 
     if (existing) {
       // Merge into existing tutorial
@@ -86,6 +89,10 @@ export async function processSubmission(submissionId: string, options?: ProcessO
         extracted.raw_text,
         submission.url,
       );
+
+      // PIP-3: Use merged body for audio regeneration
+      audioBody = merged.body;
+      audioSlug = existing.slug;
 
       const mergeUpdate: Record<string, unknown> = {
         body: merged.body,
@@ -147,17 +154,38 @@ export async function processSubmission(submissionId: string, options?: ProcessO
 
       if (insertError) throw insertError;
       tutorialId = created!.id;
+
+      // New tutorial: use generated body/slug for audio
+      audioBody = generated.body;
+      audioSlug = generated.slug;
     }
 
-    // 8. Generate hero image (non-blocking — if it fails, tutorial still publishes)
+    // 8. Generate hero image + audio in parallel (PIP-1)
+    //    Both are non-blocking — if either fails, tutorial still publishes (PIP-2)
     try {
-      const imageUrl = await generateTutorialImage(
-        generated.title,
-        generated.classification.topics,
-        generated.classification.maturity_level,
-        generated.summary,
-        generated.action_items,
-      );
+      const audioStart = Date.now();
+
+      const [imageUrl, audioUrl] = await Promise.all([
+        generateTutorialImage(
+          generated.title,
+          generated.classification.topics,
+          generated.classification.maturity_level,
+          generated.summary,
+          generated.action_items,
+        ).catch((imgErr: unknown) => {
+          console.error(`[process] Image generation failed (non-fatal):`, imgErr);
+          return null;
+        }),
+        generateTutorialAudio(audioBody, audioSlug).catch((audioErr: unknown) => {
+          console.error(`[process] Audio generation failed (non-fatal):`, audioErr);
+          return null;
+        }),
+      ]);
+
+      // PIP-4: Log audio timing
+      const audioDuration = Date.now() - audioStart;
+      console.log(`[process] Audio generation took ${audioDuration}ms for ${tutorialId}`);
+
       if (imageUrl) {
         await supabase
           .from("tutorials")
@@ -165,8 +193,17 @@ export async function processSubmission(submissionId: string, options?: ProcessO
           .eq("id", tutorialId);
         console.log(`[process] Generated hero image for ${tutorialId}`);
       }
-    } catch (imgErr) {
-      console.error(`[process] Image generation failed (non-fatal):`, imgErr);
+
+      // PIP-5: Store audio_url on the tutorial row
+      if (audioUrl) {
+        await supabase
+          .from("tutorials")
+          .update({ audio_url: audioUrl })
+          .eq("id", tutorialId);
+        console.log(`[process] Generated audio for ${tutorialId}: ${audioUrl}`);
+      }
+    } catch (mediaErr) {
+      console.error(`[process] Media generation failed (non-fatal):`, mediaErr);
     }
 
     // 8b. Generate hot news headline/teaser if flagged

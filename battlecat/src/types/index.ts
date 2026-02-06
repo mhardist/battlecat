@@ -61,6 +61,7 @@ export interface Tutorial {
   source_urls: string[];
   source_count: number;
   image_url: string | null;
+  audio_url: string | null;
   is_stale: boolean;
   is_hot_news: boolean;
   hot_news_headline: string | null;
