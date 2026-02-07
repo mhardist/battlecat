@@ -27,15 +27,16 @@ export function ListenButton({
 
   // ─── Cleanup on unmount (FE-10) ─────────────────────────────────────────
   useEffect(() => {
+    const audio = audioRef.current;
+    const errorTimer = errorTimerRef.current;
     return () => {
-      const audio = audioRef.current;
       if (audio) {
         audio.pause();
         audio.removeAttribute("src");
         audio.load();
       }
-      if (errorTimerRef.current) {
-        clearTimeout(errorTimerRef.current);
+      if (errorTimer) {
+        clearTimeout(errorTimer);
       }
     };
   }, []);

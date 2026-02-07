@@ -160,7 +160,6 @@ beforeEach(() => {
     // Track update calls
     chain.update = vi.fn().mockImplementation((payload: Record<string, unknown>) => {
       const innerChain = makeChain()
-      const origEq = innerChain.eq as ReturnType<typeof vi.fn>
       innerChain.eq = vi.fn().mockImplementation((_col: string, id: string) => {
         updateCalls.push({ table, payload, eqId: id })
         return innerChain

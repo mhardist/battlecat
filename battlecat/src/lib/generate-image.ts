@@ -6,9 +6,9 @@
 export async function generateTutorialImage(
   title: string,
   topics: string[],
-  maturityLevel: number,
+  _maturityLevel: number,
   summary: string,
-  actionItems: string[],
+  _actionItems: string[],
 ): Promise<string | null> {
   const apiKey = process.env.TOGETHER_API_KEY;
   if (!apiKey) {
@@ -16,11 +16,6 @@ export async function generateTutorialImage(
     return null;
   }
 
-  const levelNames = ["Asker", "Instructor", "Designer", "Supervisor", "Architect"];
-  const levelName = levelNames[maturityLevel] || "AI";
-
-  // Extract key concepts from the summary for visual representation
-  const keyPoints = actionItems.slice(0, 3).join("; ");
   const topicList = topics.slice(0, 4).join(", ");
 
   // Build a content-specific infographic prompt

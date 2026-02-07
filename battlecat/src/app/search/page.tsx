@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { getAllTutorials as getSeedTutorials } from "@/data/seed-tutorials";
 import { TutorialCard } from "@/components/TutorialCard";
 import { useBookmarks } from "@/hooks/useBookmarks";
@@ -23,10 +23,8 @@ export default function SearchPage() {
       .catch(console.error);
   }, []);
 
-  // Search: use API if query exists, otherwise filter locally
-  const [results, setResults] = useState<Tutorial[]>(allTutorials);
-
-  const doSearch = useCallback(() => {
+  // Derive search results from state (no effect needed)
+  const results = useMemo(() => {
     let tutorials = allTutorials;
     if (query.trim()) {
       const q = query.trim().toLowerCase();
@@ -42,10 +40,8 @@ export default function SearchPage() {
     if (levelFilter !== null) {
       tutorials = tutorials.filter((t) => t.maturity_level === levelFilter);
     }
-    setResults(tutorials);
+    return tutorials;
   }, [query, levelFilter, allTutorials]);
-
-  useEffect(() => { doSearch(); }, [doSearch]);
 
   return (
     <div className="space-y-6">

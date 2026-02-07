@@ -40,6 +40,7 @@ export function TutorialCard({
       {/* Hero image */}
       {tutorial.image_url && (
         <div className="relative overflow-hidden">
+          {/* eslint-disable-next-line @next/next/no-img-element -- dynamic external image from Supabase storage */}
           <img
             src={tutorial.image_url}
             alt=""
