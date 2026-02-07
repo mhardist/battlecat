@@ -4,7 +4,6 @@ import Link from "next/link";
 import { getLevel, getAllLevels, TRANSITIONS } from "@/config/levels";
 import { MaturityLevel } from "@/types";
 import { getTutorialsByLevel, getLevelUpTutorials } from "@/data/tutorials";
-import { RecommendedNext } from "@/components/RecommendedNext";
 
 interface Props {
   params: Promise<{ level: string }>;
@@ -126,11 +125,6 @@ export default async function LevelPage({ params }: Props) {
           </div>
         )}
       </div>
-
-      {/* Recommended Next (impact-scored) */}
-      {tutorials.length > 0 && (
-        <RecommendedNext tutorials={[...tutorials, ...levelUpTutorials.filter((lu) => !tutorials.some((t) => t.id === lu.id))]} />
-      )}
 
       {/* Level-Up Content */}
       {levelUpTutorials.length > 0 && (
