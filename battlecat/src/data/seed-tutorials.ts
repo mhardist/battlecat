@@ -1,15 +1,27 @@
 import { Tutorial } from "@/types";
 
+/** Slugs that have a pre-generated mp3 in public/audio/ */
+const AUDIO_SLUGS = new Set([
+  "build-custom-gpt-claude-project-gemini-gem",
+  "claude-code-agentic-engineering",
+  "claude-code-best-practices-agentic-coding",
+  "custom-gpts-and-memory",
+  "multi-agent-orchestration",
+  "technical-cliff-l2-to-l3",
+  "the-gate-l3-to-l4",
+  "vibe-coding-tools-compared-lovable-v0-bolt",
+  "vibe-coding-with-lovable-v0",
+  "what-is-prompt-engineering",
+]);
+
 /**
- * Inject audio URLs on seed tutorials that have local TTS audio files.
- * Maps each tutorial's audio_url to `/api/tts/{slug}` so the TTS route
- * can serve the bundled mp3 files. Existing non-null audio_url values
- * are never overridden.
+ * Inject audio URLs for tutorials that have a matching mp3 in public/audio/.
+ * Existing non-null audio_url values are never overridden.
  */
 export function withDevAudio(tutorials: Tutorial[]): Tutorial[] {
   return tutorials.map((t) => ({
     ...t,
-    audio_url: t.audio_url ?? `/audio/${t.slug}.mp3`,
+    audio_url: t.audio_url ?? (AUDIO_SLUGS.has(t.slug) ? `/audio/${t.slug}.mp3` : null),
   }));
 }
 

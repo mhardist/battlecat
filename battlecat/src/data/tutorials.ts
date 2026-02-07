@@ -38,11 +38,10 @@ export async function getAllTutorials(): Promise<Tutorial[]> {
 
   // Merge: DB tutorials first, then seed tutorials that don't conflict
   const dbSlugs = new Set(dbTutorials.map((t) => t.slug));
-  const seedOnly = withDevAudio(
-    SEED_TUTORIALS.filter((t) => !dbSlugs.has(t.slug))
-  );
+  const seedOnly = SEED_TUTORIALS.filter((t) => !dbSlugs.has(t.slug));
 
-  return [...dbTutorials, ...seedOnly].sort(
+  // Inject audio URLs for any tutorial with a matching public/audio mp3
+  return withDevAudio([...dbTutorials, ...seedOnly]).sort(
     (a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
   );
 }
@@ -91,14 +90,14 @@ export async function getTutorialBySlug(slug: string): Promise<Tutorial | undefi
         .single();
 
       if (!error && data) {
-        return data as Tutorial;
+        return withDevAudio([data as Tutorial])[0];
       }
     } catch {
       // fall through to seed
     }
   }
 
-  // Fallback to seed data (with dev audio URL injected in non-production)
+  // Fallback to seed data
   const seed = SEED_TUTORIALS.find((t) => t.slug === slug);
   if (!seed) return undefined;
   return withDevAudio([seed])[0];
