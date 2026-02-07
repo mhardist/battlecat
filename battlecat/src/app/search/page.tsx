@@ -10,8 +10,9 @@ import { MaturityLevel, Tutorial } from "@/types";
 export default function SearchPage() {
   const [query, setQuery] = useState("");
   const [levelFilter, setLevelFilter] = useState<MaturityLevel | null>(null);
-  const { toggle, isBookmarked } = useBookmarks();
-  const { getRating } = useRatings();
+  const { toggle, isBookmarked, loaded: bookmarksLoaded } = useBookmarks();
+  const { getRating, loaded: ratingsLoaded } = useRatings();
+  const clientReady = bookmarksLoaded && ratingsLoaded;
   const [allTutorials, setAllTutorials] = useState<Tutorial[]>(getSeedTutorials());
 
   // Fetch from API on mount to include Supabase tutorials
@@ -114,10 +115,10 @@ export default function SearchPage() {
             <TutorialCard
               key={tutorial.id}
               tutorial={tutorial}
-              showBookmark
-              isBookmarked={isBookmarked(tutorial.id)}
+              showBookmark={clientReady}
+              isBookmarked={clientReady ? isBookmarked(tutorial.id) : false}
               onToggleBookmark={toggle}
-              rating={getRating(tutorial.id)}
+              rating={clientReady ? getRating(tutorial.id) : 0}
             />
           ))}
         </div>

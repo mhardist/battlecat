@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { DarkModeToggle } from "@/components/DarkModeToggle";
+// import { DarkModeToggle } from "@/components/DarkModeToggle";
 import { MobileNav } from "@/components/MobileNav";
-import { AchievementProvider } from "@/components/AchievementProvider";
+// import { AchievementProvider } from "@/components/AchievementProvider";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -40,7 +40,6 @@ export default function RootLayout({
         <link rel="alternate" type="application/rss+xml" title="Battlecat AI" href="/feed.xml" />
       </head>
       <body className="antialiased">
-        <AchievementProvider>
           <nav className="sticky top-0 z-50 border-b border-bc-border bg-bc-surface/80 backdrop-blur-md">
             <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
               <Link
@@ -64,12 +63,10 @@ export default function RootLayout({
                     {link.label}
                   </Link>
                 ))}
-                <DarkModeToggle />
               </div>
 
               {/* Mobile nav — visible on mobile only */}
               <div className="flex items-center gap-1 md:hidden">
-                <DarkModeToggle />
                 <MobileNav />
               </div>
             </div>
@@ -83,7 +80,6 @@ export default function RootLayout({
               </span>
             </p>
           </footer>
-        </AchievementProvider>
       </body>
     </html>
   );

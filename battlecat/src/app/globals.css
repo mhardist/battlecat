@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
+@custom-variant dark (&:where(.dark, .dark *));
 
 :root {
   --bc-primary: #1B7A6E;
@@ -32,19 +33,6 @@
   --bc-border: #2E2E33;
   --background: #111113;
   --foreground: #F5F5F5;
-}
-
-/* Also respect OS preference when no explicit toggle */
-@media (prefers-color-scheme: dark) {
-  :root:not(.dark):not(:has(html.dark)) {
-    --background: #111113;
-    --foreground: #F5F5F5;
-    --bc-bg: #111113;
-    --bc-surface: #1E1E22;
-    --bc-text: #F5F5F5;
-    --bc-text-secondary: #9CA3AF;
-    --bc-border: #2E2E33;
-  }
 }
 
 @theme inline {

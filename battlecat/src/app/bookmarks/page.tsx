@@ -9,8 +9,9 @@ import { getAllTutorials as getSeedTutorials } from "@/data/seed-tutorials";
 import { Tutorial } from "@/types";
 
 export default function BookmarksPage() {
-  const { bookmarks, toggle, isBookmarked, loaded } = useBookmarks();
-  const { getRating } = useRatings();
+  const { bookmarks, toggle, isBookmarked, loaded: bookmarksLoaded } = useBookmarks();
+  const { getRating, loaded: ratingsLoaded } = useRatings();
+  const loaded = bookmarksLoaded && ratingsLoaded;
   const [allTutorials, setAllTutorials] = useState<Tutorial[]>(getSeedTutorials());
 
   useEffect(() => {

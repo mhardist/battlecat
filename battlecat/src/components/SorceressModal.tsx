@@ -194,15 +194,22 @@ export function SorceressModal({
         <div className="flex justify-center -mt-2 mb-2">
           <div className="relative">
             <SorceressIcon size={100} />
-            {/* Sparkle particles */}
+            {/* Sparkle particles - using fixed positions to avoid hydration mismatch */}
             <div className="absolute inset-0 pointer-events-none">
-              {[...Array(6)].map((_, i) => (
+              {[
+                { left: 25, top: 15 },
+                { left: 70, top: 25 },
+                { left: 45, top: 55 },
+                { left: 80, top: 45 },
+                { left: 30, top: 65 },
+                { left: 60, top: 70 },
+              ].map((pos, i) => (
                 <div
                   key={i}
                   className="absolute w-1 h-1 bg-teal-300 rounded-full animate-ping"
                   style={{
-                    left: `${20 + Math.random() * 60}%`,
-                    top: `${10 + Math.random() * 60}%`,
+                    left: `${pos.left}%`,
+                    top: `${pos.top}%`,
                     animationDelay: `${i * 0.4}s`,
                     animationDuration: "2s",
                   }}

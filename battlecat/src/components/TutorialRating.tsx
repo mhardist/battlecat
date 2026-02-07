@@ -17,23 +17,22 @@ export function TutorialRating({ tutorialId, size = "md" }: TutorialRatingProps)
   const { getRating, setRating, loaded } = useRatings();
   const { recheckAchievements } = useAchievementContext();
 
-  if (!loaded) {
-    return null;
-  }
-
   const handleRate = (id: string, rating: number) => {
     setRating(id, rating);
     recheckAchievements();
   };
 
+  // Always render the same structure to avoid hydration mismatch
+  // Just show placeholder Orkos when not loaded
   return (
     <div className="space-y-1">
       <p className="text-sm font-medium text-bc-text-secondary">Rate this tutorial</p>
       <OrkoRating
         tutorialId={tutorialId}
-        rating={getRating(tutorialId)}
-        onRate={handleRate}
+        rating={loaded ? getRating(tutorialId) : 0}
+        onRate={loaded ? handleRate : () => {}}
         size={size}
+        readOnly={!loaded}
       />
     </div>
   );

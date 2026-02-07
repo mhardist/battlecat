@@ -1,0 +1,33 @@
+Multi-Agent Orchestration: Your AI Organization
+
+How to coordinate multiple AI agents as a team — parallel execution, quality gates, and the PRD-first waterfall. This is L4: Architect → Organization.
+
+What is L4?
+
+L4 is where you stop supervising individual agents and start designing systems of agents. You're the architect of an AI organization. The org chart includes AI.
+
+The PRD-first waterfall.
+
+Start with a Product Requirements Document. Every agent in the system references this single source of truth. No interpretation drift, no scope creep — the PRD is the contract.
+
+Parallel execution.
+
+Multiple agents working simultaneously on different parts of the same project. One handles frontend, another handles API design, another writes tests. They share a codebase but own different domains.
+
+The Ralph Wiggum Loop.
+
+Named after "I'm in danger" — when an agent realizes it's stuck, confused, or going in circles. Good orchestration includes circuit breakers: if an agent loops 3 times on the same error, escalate to human.
+
+Quality gates.
+
+- Plan review: Before an agent writes code, its plan gets approved
+
+- Test gate: Code must pass tests before merging
+
+- Security gate: Automated checks for auth, injection, data exposure
+
+- Human gate: Critical paths always get human review
+
+The Gate: L3 → L4.
+
+You can't orchestrate what you can't trust. L4 requires mastery of security (auth, encryption, access control), reliability (error handling, testing, monitoring), and systems thinking (architecture, scaling, integration). This is "The Gate."
