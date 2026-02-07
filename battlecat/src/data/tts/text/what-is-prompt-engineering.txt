@@ -1,0 +1,25 @@
+What Is Prompt Engineering and Why Should You Care?
+
+A beginner-friendly breakdown of how the words you type into AI tools shape the quality of what you get back. Start here if you're new to AI.
+
+The basics.
+
+Prompt engineering is the practice of crafting your input to an AI model so it produces better, more useful output. Think of it like learning to ask better questions — the better you ask, the better the answer.
+
+Why it matters.
+
+Most people type a vague sentence into ChatGPT and get a vague answer back. That's L0 behavior — transactional, no context, no continuity. Understanding prompts is the first step to getting real value from AI.
+
+Key techniques.
+
+- Be specific: "Write a 3-paragraph summary of X for a non-technical audience" beats "Tell me about X"
+
+- Give context: Tell the AI who you are and what you need the output for
+
+- Use examples: Show the AI what good output looks like
+
+- Iterate: Your first prompt is rarely your best — refine and ask again
+
+The L0 to L1 bridge.
+
+Once you understand prompts, the natural next step is to stop repeating yourself. That's where custom instructions and memory come in — the jump from L0 (Asker) to L1 (Instructor).

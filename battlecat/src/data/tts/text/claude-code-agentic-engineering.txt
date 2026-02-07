@@ -1,0 +1,39 @@
+Claude Code and the Agentic Engineering Loop
+
+How to work with AI agents that read your codebase, make decisions, and ship code autonomously. The L3 shift from directing to supervising.
+
+From L2 to L3: the technical cliff.
+
+L2 tools build prototypes. L3 tools ship production code. The gap between them is real engineering: security, authentication, data integrity, error handling. Most people stall here.
+
+What L3 looks like.
+
+You define "done." The agent figures out how. You review outcomes, not keystrokes. This is the Supervisor → Agent relationship.
+
+The agentic engineering loop.
+
+- Understand: Agent reads your codebase, docs, and existing patterns
+
+- Plan: Agent proposes an approach before writing code
+
+- Execute: Agent writes code, creates files, runs tests
+
+- Verify: Agent checks its own work against acceptance criteria
+
+- Iterate: Agent fixes issues found during verification
+
+- Deliver: Clean PR ready for human review
+
+Tools.
+
+Claude Code.
+
+CLI tool that reads your entire codebase, understands the architecture, and makes changes across multiple files. Works in your terminal alongside git.
+
+Cursor.
+
+AI-native code editor. Understands your project context and suggests changes across files.
+
+The key mindset shift.
+
+Stop micromanaging. Write clear acceptance criteria. Let the agent work. Review the diff, not the process. If you're watching every keystroke, you're still at L2.

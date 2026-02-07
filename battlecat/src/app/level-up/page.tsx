@@ -20,9 +20,10 @@ const STORAGE_KEY = "battlecat-quiz-level";
 
 export default function LevelUpPage() {
   const levels = getAllLevels();
-  const { toggle, isBookmarked } = useBookmarks();
-  const { getRating } = useRatings();
+  const { toggle, isBookmarked, loaded: bookmarksLoaded } = useBookmarks();
+  const { getRating, loaded: ratingsLoaded } = useRatings();
   const { trackQuizComplete } = useAchievementContext();
+  const clientReady = bookmarksLoaded && ratingsLoaded;
 
   const [quizState, setQuizState] = useState<QuizState>("welcome");
   const [currentQ, setCurrentQ] = useState(0);
@@ -288,10 +289,10 @@ export default function LevelUpPage() {
               <TutorialCard
                 key={tutorial.id}
                 tutorial={tutorial}
-                showBookmark
-                isBookmarked={isBookmarked(tutorial.id)}
+                showBookmark={clientReady}
+                isBookmarked={clientReady ? isBookmarked(tutorial.id) : false}
                 onToggleBookmark={toggle}
-                rating={getRating(tutorial.id)}
+                rating={clientReady ? getRating(tutorial.id) : 0}
               />
             ))}
           </div>
@@ -309,10 +310,10 @@ export default function LevelUpPage() {
               <TutorialCard
                 key={tutorial.id}
                 tutorial={tutorial}
-                showBookmark
-                isBookmarked={isBookmarked(tutorial.id)}
+                showBookmark={clientReady}
+                isBookmarked={clientReady ? isBookmarked(tutorial.id) : false}
                 onToggleBookmark={toggle}
-                rating={getRating(tutorial.id)}
+                rating={clientReady ? getRating(tutorial.id) : 0}
               />
             ))}
           </div>

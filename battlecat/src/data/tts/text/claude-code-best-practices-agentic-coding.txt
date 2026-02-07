@@ -1,0 +1,78 @@
+Claude Code Best Practices: From Vibe Coder to Agentic Engineer
+
+Anthropic's own engineering team shares how they use Claude Code to ship production code autonomously. The definitive guide to crossing from L2 (prototyping) to L3 (supervising AI agents).
+
+The L2 Ceiling.
+
+You've built prototypes with Lovable or v0. They look great in demos. But when it's time to add authentication, handle edge cases, write tests, or deploy to production — you hit a wall. Vibe coding tools generate code; agentic coding tools engineer solutions.
+
+Claude Code is Anthropic's answer to this gap: a terminal-based AI agent that reads your entire codebase, makes architectural decisions, writes code across multiple files, runs tests, and iterates until things work.
+
+The L2→L3 shift isn't about using a harder tool. It's about changing your role: from describing what you want (designer) to defining what "done" looks like (supervisor).
+
+What Makes Claude Code Different.
+
+Unlike vibe coding tools that generate apps from scratch, Claude Code drops into your existing project. It reads your file structure, understands your patterns, respects your conventions, and extends what's already there. Key differences:
+
+- Full codebase awareness: Reads your entire repo, not just the file you're looking at
+- Terminal-native: Runs alongside git, npm, and your existing workflow
+- Agentic loop: Plans → executes → verifies → iterates autonomously
+- Tool use: Can run tests, check types, execute commands, and verify its own work
+
+CLAUDE.md: Your Agent's Briefing Document.
+
+The single most impactful thing you can do is create a CLAUDE.md file in your repo root. Claude Code reads this automatically at the start of every session. Think of it as the agent's onboarding doc.
+
+What to include:
+
+- Build commands: npm run build, npm test, lint commands
+- Architecture overview: "This is a Next.js 15 app with Supabase backend, organized by feature"
+- Code conventions: "We use TypeScript strict mode. No any types. Prefer named exports."
+- Common patterns: "API routes use the shared createServerClient() helper for Supabase"
+- What NOT to do: "Never modify the database schema without updating schema.sql"
+
+The better your CLAUDE.md, the less you need to repeat yourself in prompts. It's the L3 equivalent of Custom GPT instructions — context that persists.
+
+Test-Driven Development with Agents.
+
+Anthropic's team calls this their favorite workflow, and it changes how you think about delegation:
+
+- You write the test (or describe what the test should verify)
+- Claude Code implements the feature to make the test pass
+- Claude Code runs the test to verify it works
+- You review the diff, not the process
+
+This is powerful because the test is your acceptance criteria. You're defining "done" in code. The agent figures out how to get there.
+
+Example workflow:
+
+Claude Code will write the test, run it (it fails), implement the validation, run it again (it passes), and present you with the diff.
+
+The Key Mindset Shifts.
+
+- Stop watching. Start reviewing.
+
+If you're watching Claude Code type every character, you're still at L2. Let it work. Come back and review the diff. If the tests pass and the code is clean, approve it.
+
+- Write prompts like you'd write tickets.
+
+Bad: "Fix the login bug"
+Good: "Users report that login fails when their email contains a '+' character. The issue is likely in the email validation regex in lib/auth.ts. Write a test that reproduces this, then fix it."
+
+- Use /compact for long sessions.
+
+Claude Code conversations accumulate context. Use /compact periodically to summarize and free up the context window for new work.
+
+- Let it run commands.
+
+Claude Code can execute shell commands, run tests, and check its own work. Don't be afraid to let it. The agentic loop — plan, execute, verify — only works if the agent can verify.
+
+Common Pitfalls.
+
+- Underdefined tasks: "Make the app better" gives the agent nothing to work with. Be specific about what needs to change and how you'll know it's done.
+- Overriding the agent's plan: If Claude Code proposes an approach and you immediately redirect, you're micromanaging. Let it try. Redirect if the result is wrong, not the approach.
+- Skipping CLAUDE.md: Without it, every session starts cold. You'll waste the first 5 minutes of every conversation re-explaining your codebase.
+
+The Bottom Line.
+
+Claude Code isn't a better autocomplete. It's a junior engineer that reads your codebase, follows your conventions, writes tests, and ships PRs. Your job is to define what "done" looks like, review the output, and course-correct when needed. That's L3: Supervisor → Agent. The sooner you stop directing every keystroke, the sooner you start shipping faster than you ever could alone.

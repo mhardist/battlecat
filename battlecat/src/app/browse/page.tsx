@@ -13,8 +13,10 @@ export default function BrowsePage() {
   const [selectedRelation, setSelectedRelation] = useState<string | null>(null);
   const [selectedDifficulty, setSelectedDifficulty] = useState<string | null>(null);
   const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
-  const { toggle, isBookmarked } = useBookmarks();
-  const { getRating } = useRatings();
+  const { toggle, isBookmarked, loaded: bookmarksLoaded } = useBookmarks();
+  const { getRating, loaded: ratingsLoaded } = useRatings();
+  // Only show bookmark/rating after localStorage is loaded to avoid hydration mismatch
+  const clientReady = bookmarksLoaded && ratingsLoaded;
 
   // Start with seed data, then fetch from API (includes Supabase tutorials)
   const [allTutorials, setAllTutorials] = useState<Tutorial[]>(getSeedTutorials());
@@ -118,10 +120,10 @@ export default function BrowsePage() {
             <TutorialCard
               key={tutorial.id}
               tutorial={tutorial}
-              showBookmark
-              isBookmarked={isBookmarked(tutorial.id)}
+              showBookmark={clientReady}
+              isBookmarked={clientReady ? isBookmarked(tutorial.id) : false}
               onToggleBookmark={toggle}
-              rating={getRating(tutorial.id)}
+              rating={clientReady ? getRating(tutorial.id) : 0}
             />
           ))}
         </div>

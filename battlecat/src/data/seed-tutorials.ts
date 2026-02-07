@@ -1,6 +1,23 @@
 import { Tutorial } from "@/types";
 
 /**
+ * Inject dev-only audio URLs on seed tutorials.
+ * In non-production environments, maps each tutorial's audio_url
+ * to `/api/tts/{slug}` so the local dev TTS route can serve audio.
+ * In production, this is a no-op. Existing non-null audio_url values
+ * are never overridden.
+ */
+export function withDevAudio(tutorials: Tutorial[]): Tutorial[] {
+  if (process.env.NODE_ENV === "production") {
+    return tutorials;
+  }
+  return tutorials.map((t) => ({
+    ...t,
+    audio_url: t.audio_url ?? `/api/tts/${t.slug}`,
+  }));
+}
+
+/**
  * Seed tutorials for development.
  * These represent the kind of content the system will generate
  * once the full pipeline is connected.
@@ -45,6 +62,7 @@ export const SEED_TUTORIALS: Tutorial[] = [
     ],
     source_count: 2,
     image_url: null,
+    audio_url: null,
     is_stale: false,
     is_hot_news: false,
     hot_news_headline: null,
@@ -92,6 +110,7 @@ export const SEED_TUTORIALS: Tutorial[] = [
     source_urls: ["https://example.com/custom-gpts-guide"],
     source_count: 1,
     image_url: null,
+    audio_url: null,
     is_stale: false,
     is_hot_news: false,
     hot_news_headline: null,
@@ -146,6 +165,7 @@ export const SEED_TUTORIALS: Tutorial[] = [
     ],
     source_count: 3,
     image_url: null,
+    audio_url: null,
     is_stale: false,
     is_hot_news: false,
     hot_news_headline: null,
@@ -202,6 +222,7 @@ export const SEED_TUTORIALS: Tutorial[] = [
     ],
     source_count: 2,
     image_url: null,
+    audio_url: null,
     is_stale: false,
     is_hot_news: false,
     hot_news_headline: null,
@@ -262,6 +283,7 @@ export const SEED_TUTORIALS: Tutorial[] = [
     ],
     source_count: 3,
     image_url: null,
+    audio_url: null,
     is_stale: false,
     is_hot_news: false,
     hot_news_headline: null,
@@ -319,6 +341,7 @@ export const SEED_TUTORIALS: Tutorial[] = [
     ],
     source_count: 2,
     image_url: null,
+    audio_url: null,
     is_stale: false,
     is_hot_news: false,
     hot_news_headline: null,
@@ -382,6 +405,7 @@ export const SEED_TUTORIALS: Tutorial[] = [
     ],
     source_count: 1,
     image_url: null,
+    audio_url: null,
     is_stale: false,
     is_hot_news: false,
     hot_news_headline: null,
@@ -482,6 +506,7 @@ Building a Custom GPT, Claude Project, or Gemini Gem takes 15 minutes. The time 
     ],
     source_count: 1,
     image_url: null,
+    audio_url: null,
     is_stale: false,
     is_hot_news: false,
     hot_news_headline: null,
@@ -592,6 +617,7 @@ You can go from idea to working, deployed app in an afternoon. That's not an exa
     ],
     source_count: 1,
     image_url: null,
+    audio_url: null,
     is_stale: false,
     is_hot_news: false,
     hot_news_headline: null,
@@ -708,6 +734,7 @@ Claude Code isn't a better autocomplete. It's a junior engineer that reads your 
     ],
     source_count: 1,
     image_url: null,
+    audio_url: null,
     is_stale: false,
     is_hot_news: false,
     hot_news_headline: null,
@@ -718,10 +745,12 @@ Claude Code isn't a better autocomplete. It's a junior engineer that reads your 
   },
 ];
 
-/** Get all seed tutorials */
+/** Get all seed tutorials (with dev audio URLs injected in non-production) */
 export function getAllTutorials(): Tutorial[] {
-  return SEED_TUTORIALS.sort(
-    (a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+  return withDevAudio(
+    SEED_TUTORIALS.sort(
+      (a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+    )
   );
 }
 
@@ -730,9 +759,11 @@ export function getTutorialsByLevel(level: number): Tutorial[] {
   return getAllTutorials().filter((t) => t.maturity_level === level);
 }
 
-/** Get a tutorial by slug */
+/** Get a tutorial by slug (with dev audio URL injected in non-production) */
 export function getTutorialBySlug(slug: string): Tutorial | undefined {
-  return SEED_TUTORIALS.find((t) => t.slug === slug);
+  const found = SEED_TUTORIALS.find((t) => t.slug === slug);
+  if (!found) return undefined;
+  return withDevAudio([found])[0];
 }
 
 /** Get tutorials that teach you to level up from a given level */
