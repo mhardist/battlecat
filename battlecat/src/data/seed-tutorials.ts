@@ -1,19 +1,15 @@
 import { Tutorial } from "@/types";
 
 /**
- * Inject dev-only audio URLs on seed tutorials.
- * In non-production environments, maps each tutorial's audio_url
- * to `/api/tts/{slug}` so the local dev TTS route can serve audio.
- * In production, this is a no-op. Existing non-null audio_url values
+ * Inject audio URLs on seed tutorials that have local TTS audio files.
+ * Maps each tutorial's audio_url to `/api/tts/{slug}` so the TTS route
+ * can serve the bundled mp3 files. Existing non-null audio_url values
  * are never overridden.
  */
 export function withDevAudio(tutorials: Tutorial[]): Tutorial[] {
-  if (process.env.NODE_ENV === "production") {
-    return tutorials;
-  }
   return tutorials.map((t) => ({
     ...t,
-    audio_url: t.audio_url ?? `/api/tts/${t.slug}`,
+    audio_url: t.audio_url ?? `/audio/${t.slug}.mp3`,
   }));
 }
 
