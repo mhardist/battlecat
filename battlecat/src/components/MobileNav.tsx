@@ -43,6 +43,13 @@ export function MobileNav() {
     };
   }, [open]);
 
+  // Return placeholder during SSR to avoid any hydration mismatch
+  if (!mounted) {
+    return (
+      <div className="rounded-md p-2 h-9 w-9" aria-hidden="true" />
+    );
+  }
+
   return (
     <>
       {/* Hamburger button — visible on mobile only */}
@@ -51,14 +58,13 @@ export function MobileNav() {
         className="rounded-md p-2 text-bc-text-secondary hover:bg-bc-primary/10 hover:text-bc-primary md:hidden"
         aria-label="Open menu"
       >
-        {/* Always show hamburger icon - menu state only changes after user interaction */}
         <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
         </svg>
       </button>
 
-      {/* Mobile menu overlay - only render after mounted to avoid hydration issues */}
-      {mounted && open && (
+      {/* Mobile menu overlay */}
+      {open && (
         <div className="fixed inset-0 top-[57px] z-40 bg-background/95 backdrop-blur-sm md:hidden">
           {/* Close button inside menu */}
           <button
