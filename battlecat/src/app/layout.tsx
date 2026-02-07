@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 // import { DarkModeToggle } from "@/components/DarkModeToggle";
-// import { MobileNav } from "@/components/MobileNav";
+import { MobileNav } from "@/components/MobileNav";
 // import { AchievementProvider } from "@/components/AchievementProvider";
 import "./globals.css";
 
@@ -63,6 +63,11 @@ export default function RootLayout({
                     {link.label}
                   </Link>
                 ))}
+              </div>
+
+              {/* Mobile nav — visible on mobile only */}
+              <div className="flex items-center gap-1 md:hidden">
+                <MobileNav />
               </div>
             </div>
           </nav>
