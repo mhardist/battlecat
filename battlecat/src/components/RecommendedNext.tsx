@@ -27,10 +27,41 @@ export function RecommendedNext({ tutorials, limit = 3 }: RecommendedNextProps) 
     setMounted(true);
   }, []);
 
-  if (!mounted) return null;
+  // Get recommendations only when mounted (localStorage available)
+  const recommended = mounted ? getRecommended(tutorials, limit) : [];
 
-  const recommended = getRecommended(tutorials, limit);
-  if (recommended.length === 0) return null;
+  // Hide section if mounted and no recommendations
+  if (mounted && recommended.length === 0) return null;
+
+  // Show skeleton when not mounted
+  if (!mounted) {
+    return (
+      <section className="space-y-3">
+        <h2 className="text-xl font-bold flex items-center gap-2">
+          <svg className="h-5 w-5 text-bc-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+          </svg>
+          Recommended Next
+        </h2>
+        <p className="text-sm text-bc-text-secondary">
+          Ranked by impact on your mastery and level-up readiness
+        </p>
+        <div className="grid gap-3">
+          {[1, 2, 3].slice(0, limit).map((i) => (
+            <div key={i} className="rounded-lg border border-bc-border bg-bc-surface p-4 animate-pulse">
+              <div className="flex items-start gap-4">
+                <div className="h-8 w-8 rounded-full bg-bc-border/30" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 bg-bc-border/30 rounded w-3/4" />
+                  <div className="h-3 bg-bc-border/30 rounded w-full" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="space-y-3">
