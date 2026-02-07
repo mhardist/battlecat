@@ -10,7 +10,6 @@ import { ToolBadge } from "@/components/ToolBadge";
 import { TutorialRating } from "@/components/TutorialRating";
 import { MossManBadge } from "@/components/MossManBadge";
 import { TutorialReadTracker } from "@/components/TutorialReadTracker";
-import { TutorialImpactScore } from "@/components/TutorialImpactScore";
 import { renderMarkdown } from "@/lib/markdown";
 
 interface Props {
@@ -179,11 +178,6 @@ export default async function TutorialPage({ params }: Props) {
         <div className="flex justify-center">
           <TutorialRating tutorialId={tutorial.id} size="lg" />
         </div>
-      </section>
-
-      {/* Impact Score */}
-      <section className="mt-6">
-        <TutorialImpactScore tutorial={tutorial} />
       </section>
 
       {/* Sources */}
