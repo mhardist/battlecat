@@ -26,19 +26,13 @@ interface Result {
  *   - limit: max tutorials to process (default 5)
  *   - slug: process a single specific tutorial
  *
- * Requires AUDIO_ENABLED=true, DEEPGRAM_API_KEY, ANTHROPIC_API_KEY.
+ * Requires DEEPGRAM_API_KEY and ANTHROPIC_API_KEY env vars.
  */
 export async function POST(request: Request) {
   const results: Result[] = [];
 
   try {
-    // Check required env vars
-    if (process.env.AUDIO_ENABLED !== "true") {
-      return NextResponse.json(
-        { error: "AUDIO_ENABLED is not set to true" },
-        { status: 400 }
-      );
-    }
+    // Check required env vars (no AUDIO_ENABLED check — backfill is intentional)
     if (!process.env.DEEPGRAM_API_KEY) {
       return NextResponse.json(
         { error: "DEEPGRAM_API_KEY is not configured" },
