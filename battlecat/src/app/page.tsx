@@ -20,18 +20,21 @@ export default async function Home() {
   const allTutorials = await getAllTutorials();
   const latestTutorials = allTutorials.slice(0, 6);
 
-  // Build hot news: database items first, then fill with config items
+  // Build hot news: only items from today (removes after 1 day)
+  const today = new Date().toISOString().slice(0, 10);
   const hotNewsTutorials = await getHotNewsTutorials();
-  const dbNewsItems: NewsItem[] = hotNewsTutorials.map((t) => ({
-    date: t.created_at.slice(0, 10),
-    headline: t.hot_news_headline || t.title,
-    teaser: t.hot_news_teaser || t.summary.slice(0, 200),
-    toolName: t.tools_mentioned[0] || "AI",
-    level: t.maturity_level,
-    url: `/tutorials/${t.slug}`,
-  }));
-  // Merge: DB items first, then config items to fill up to 8
-  const hotNewsItems = [...dbNewsItems, ...HOT_NEWS].slice(0, 8);
+  const dbNewsItems: NewsItem[] = hotNewsTutorials
+    .filter((t) => t.created_at.slice(0, 10) === today)
+    .map((t) => ({
+      date: t.created_at.slice(0, 10),
+      headline: t.hot_news_headline || t.title,
+      teaser: t.hot_news_teaser || t.summary.slice(0, 200),
+      toolName: t.tools_mentioned[0] || "AI",
+      level: t.maturity_level,
+      url: `/tutorials/${t.slug}`,
+    }));
+  const todayConfigItems = HOT_NEWS.filter((item) => item.date === today);
+  const hotNewsItems = [...dbNewsItems, ...todayConfigItems].slice(0, 8);
 
   // Stats
   const totalTutorials = allTutorials.length;
@@ -68,22 +71,24 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* Hot News — latest AI releases */}
-      <section className="space-y-4">
-        <div className="flex items-baseline justify-between">
-          <h2 className="text-2xl font-bold flex items-center gap-2">
-            <span className="inline-block h-2.5 w-2.5 rounded-full bg-red-500 animate-pulse" />
-            Hot in AI
-          </h2>
-          <Link
-            href="/tools"
-            className="text-sm font-medium text-bc-primary hover:underline"
-          >
-            Full timeline &rarr;
-          </Link>
-        </div>
-        <HotNews items={hotNewsItems} levels={levels} />
-      </section>
+      {/* Hot News — only shown when there are items from today */}
+      {hotNewsItems.length > 0 && (
+        <section className="space-y-4">
+          <div className="flex items-baseline justify-between">
+            <h2 className="text-2xl font-bold flex items-center gap-2">
+              <span className="inline-block h-2.5 w-2.5 rounded-full bg-red-500 animate-pulse" />
+              Hot in AI
+            </h2>
+            <Link
+              href="/tools"
+              className="text-sm font-medium text-bc-primary hover:underline"
+            >
+              Full timeline &rarr;
+            </Link>
+          </div>
+          <HotNews items={hotNewsItems} levels={levels} />
+        </section>
+      )}
 
       {/* Latest Tutorials — the main content */}
       <section className="space-y-5">
