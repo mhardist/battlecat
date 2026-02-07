@@ -18,7 +18,13 @@ const NAV_LINKS = [
 
 export function MobileNav() {
   const [open, setOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const pathname = usePathname();
+
+  // Mark as mounted after hydration
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Close menu on route change
   useEffect(() => {
@@ -43,22 +49,27 @@ export function MobileNav() {
       <button
         onClick={() => setOpen(!open)}
         className="rounded-md p-2 text-bc-text-secondary hover:bg-bc-primary/10 hover:text-bc-primary md:hidden"
-        aria-label={open ? "Close menu" : "Open menu"}
+        aria-label="Open menu"
       >
-        {open ? (
-          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        ) : (
-          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
-        )}
+        {/* Always show hamburger icon - menu state only changes after user interaction */}
+        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
       </button>
 
-      {/* Mobile menu overlay */}
-      {open && (
+      {/* Mobile menu overlay - only render after mounted to avoid hydration issues */}
+      {mounted && open && (
         <div className="fixed inset-0 top-[57px] z-40 bg-background/95 backdrop-blur-sm md:hidden">
+          {/* Close button inside menu */}
+          <button
+            onClick={() => setOpen(false)}
+            className="absolute top-4 right-4 rounded-md p-2 text-bc-text-secondary hover:bg-bc-primary/10"
+            aria-label="Close menu"
+          >
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
           <nav className="flex flex-col gap-1 p-4">
             {NAV_LINKS.map((link) => (
               <Link
