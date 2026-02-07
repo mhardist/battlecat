@@ -81,7 +81,7 @@ export default function LevelUpPage() {
         }, 300);
       }
     },
-    [currentQ, answers]
+    [currentQ, answers, trackQuizComplete]
   );
 
   const startQuiz = () => {

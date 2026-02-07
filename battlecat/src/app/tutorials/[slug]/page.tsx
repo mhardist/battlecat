@@ -51,7 +51,6 @@ export default async function TutorialPage({ params }: Props) {
     notFound();
   }
 
-  const level = getLevel(tutorial.maturity_level);
   const bodyHtml = renderMarkdown(tutorial.body);
   const readingTime = Math.max(1, Math.ceil(tutorial.body.split(/\s+/).length / 200));
 
@@ -62,6 +61,7 @@ export default async function TutorialPage({ params }: Props) {
       {/* Hero Image */}
       {tutorial.image_url && (
         <div className="relative -mx-4 sm:mx-0 mb-8 overflow-hidden rounded-none sm:rounded-2xl">
+          {/* eslint-disable-next-line @next/next/no-img-element -- dynamic external image from Supabase storage */}
           <img
             src={tutorial.image_url}
             alt={tutorial.title}
