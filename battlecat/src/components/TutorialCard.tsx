@@ -49,6 +49,7 @@ export function TutorialCard({
             <LevelBadge
               level={tutorial.maturity_level}
               relation={tutorial.level_relation}
+              linked={false}
             />
           </div>
         </div>
@@ -63,6 +64,7 @@ export function TutorialCard({
                 <LevelBadge
                   level={tutorial.maturity_level}
                   relation={tutorial.level_relation}
+                  linked={false}
                 />
                 <span className="text-xs text-bc-text-secondary">
                   {tutorial.difficulty}
