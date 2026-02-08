@@ -252,14 +252,19 @@ function stripId3Header(buf: Buffer): Buffer {
  * 10. Return public URL (AUD-7)
  *
  * Returns null on any failure (AUD-8). Never throws.
- * Uses 20-second timeout via Promise.race (PIP-4).
+ * Uses 60-second timeout via Promise.race (PIP-4).
+ * 60s matches the Vercel function timeout for serverless deployments.
  */
 export async function generateTutorialAudio(
   body: string,
   slug: string
 ): Promise<string | null> {
-  // PIP-4: 20-second timeout via Promise.race
-  const TIMEOUT_MS = 20_000
+  console.log('[audio] Starting audio pipeline', { slug })
+
+  // PIP-4: 60-second timeout via Promise.race
+  // Matches Vercel function timeout — longer tutorials (1500+ words, 5-6 chunks)
+  // need more time for sequential Claude script generation + Deepgram TTS calls.
+  const TIMEOUT_MS = 60_000
   let timedOut = false
   let timerId: ReturnType<typeof setTimeout> | undefined
 
@@ -280,7 +285,7 @@ export async function generateTutorialAudio(
   }
 
   if (timedOut) {
-    console.error('[audio] Pipeline timed out after 20 seconds', { slug })
+    console.error(`[audio] Pipeline timed out after ${TIMEOUT_MS / 1000} seconds`, { slug })
   }
 
   return result
