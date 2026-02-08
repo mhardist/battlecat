@@ -38,9 +38,26 @@ export async function POST(request: Request) {
 
     const sourceType = detectSourceType(url);
 
-    // Store submission in Supabase
+    // Check for duplicate URL submission
     const { createServerClient } = await import("@/lib/supabase");
     const supabase = createServerClient();
+
+    const { data: existing } = await supabase
+      .from("submissions")
+      .select("id, status")
+      .eq("url", url)
+      .in("status", ["published", "processing", "extracting"])
+      .limit(1)
+      .maybeSingle();
+
+    if (existing) {
+      return NextResponse.json(
+        { error: "This URL has already been submitted", existing_submission_id: existing.id },
+        { status: 409 }
+      );
+    }
+
+    // Store submission in Supabase
     const { data: submission, error } = await supabase
       .from("submissions")
       .insert({

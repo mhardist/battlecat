@@ -49,14 +49,31 @@ export async function POST(request: NextRequest) {
   const url = urlMatch[0].replace(/[.,;:!?)]+$/, ""); // Strip trailing punctuation
   const sourceType = detectSourceType(url);
 
+  // Check for duplicate URL submission
+  const { createServerClient } = await import("@/lib/supabase");
+  const supabase = createServerClient();
+
+  const { data: existing } = await supabase
+    .from("submissions")
+    .select("id, status")
+    .eq("url", url)
+    .in("status", ["published", "processing", "extracting"])
+    .limit(1)
+    .maybeSingle();
+
+  if (existing) {
+    return new NextResponse(
+      twiml("This link has already been submitted and processed."),
+      { headers: { "Content-Type": "text/xml" } },
+    );
+  }
+
   // Detect hot news flag: "HOT:" prefix before the URL
   // e.g. "HOT: https://example.com/article" or "hot: check this out https://..."
   const textBeforeUrl = body.slice(0, body.indexOf(url));
   const isHotNews = /\bhot:/i.test(textBeforeUrl);
 
   // Store the submission
-  const { createServerClient } = await import("@/lib/supabase");
-  const supabase = createServerClient();
   const { data: submission, error } = await supabase
     .from("submissions")
     .insert({
