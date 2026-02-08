@@ -69,7 +69,7 @@ export async function processSubmission(submissionId: string, options?: ProcessO
     // 7. Check for existing tutorial on same topic to merge
     //    Use .maybeSingle() — .single() throws when 0 or 2+ rows match,
     //    which was crashing the pipeline for every new-topic submission.
-    const { data: existing } = await supabase
+    const { data: candidate } = await supabase
       .from("tutorials")
       .select("*")
       .overlaps("topics", generated.classification.topics)
@@ -77,6 +77,22 @@ export async function processSubmission(submissionId: string, options?: ProcessO
       .eq("is_published", true)
       .limit(1)
       .maybeSingle();
+
+    // Merge threshold: require at least 2 overlapping topics before merging.
+    // The Supabase .overlaps() filter matches on ANY single shared topic,
+    // which causes unrelated submissions to merge when they share a single
+    // generic topic like "ChatGPT", "AI", or "prompt engineering". By
+    // requiring >= 2 shared topics we ensure only genuinely related content
+    // gets merged into an existing tutorial.
+    const newTopics = generated.classification.topics as string[];
+    const existing = candidate && (() => {
+      const candidateTopics: string[] = candidate.topics ?? [];
+      const sharedCount = newTopics.filter((t) => candidateTopics.includes(t)).length;
+      console.log(
+        `[process] Merge check: ${sharedCount} shared topic(s) between submission and tutorial ${candidate.id}`,
+      );
+      return sharedCount >= 2 ? candidate : null;
+    })();
 
     let tutorialId: string;
     let audioBody: string;
