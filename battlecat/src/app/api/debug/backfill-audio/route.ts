@@ -3,6 +3,7 @@ import {
   generateAudioScript,
   sanitizeScriptText,
   chunkText,
+  stripId3Header,
 } from "@/lib/generate-audio";
 import { createServerClient } from "@/lib/supabase";
 
@@ -232,28 +233,4 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
-}
-
-/**
- * Strips ID3v2 headers from an MP3 buffer.
- * Duplicated from generate-audio.ts since it's not exported.
- */
-function stripId3Header(buf: Buffer): Buffer {
-  if (
-    buf.length >= 10 &&
-    buf[0] === 0x49 &&
-    buf[1] === 0x44 &&
-    buf[2] === 0x33
-  ) {
-    const size =
-      ((buf[6] & 0x7f) << 21) |
-      ((buf[7] & 0x7f) << 14) |
-      ((buf[8] & 0x7f) << 7) |
-      (buf[9] & 0x7f);
-    const headerEnd = 10 + size;
-    if (headerEnd <= buf.length) {
-      return buf.subarray(headerEnd);
-    }
-  }
-  return buf;
 }
