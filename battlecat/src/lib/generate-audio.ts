@@ -218,7 +218,7 @@ export function sanitizeScriptText(text: string): string {
  * Returns the buffer starting from the first byte after the ID3 header,
  * or the original buffer if no ID3 header is found.
  */
-function stripId3Header(buf: Buffer): Buffer {
+export function stripId3Header(buf: Buffer): Buffer {
   // Check for ID3v2 tag: starts with "ID3"
   if (buf.length >= 10 && buf[0] === 0x49 && buf[1] === 0x44 && buf[2] === 0x33) {
     // ID3v2 header is 10 bytes: "ID3" (3) + version (2) + flags (1) + size (4)
