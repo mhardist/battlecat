@@ -331,6 +331,7 @@ async function runAudioPipeline(
         {
           model: 'aura-2-athena-en',
           encoding: 'mp3',
+          sample_rate: 24000,
         }
       )
 
