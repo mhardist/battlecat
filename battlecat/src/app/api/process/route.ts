@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { processSubmission } from "@/lib/process-submission";
+import { advanceSubmission } from "@/lib/pipeline";
 
 /** Force dynamic — these routes need runtime env vars */
 export const dynamic = "force-dynamic";
@@ -10,10 +10,10 @@ export const maxDuration = 60;
 /**
  * POST /api/process
  *
- * Process a submission: extract content, classify, generate tutorial.
- * Can be called directly for manual retries or by a cron job.
+ * Advance a submission through the pipeline (extract → classify → generate → publish).
+ * Resumes from wherever the submission left off — safe to call multiple times.
  *
- * Body: { submission_id: string }
+ * Body: { submission_id: string, hot_news?: boolean }
  */
 export async function POST(request: NextRequest) {
   const { submission_id, hot_news } = await request.json();
@@ -22,18 +22,18 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Missing submission_id" }, { status: 400 });
   }
 
-  const result = await processSubmission(submission_id, { hotNews: !!hot_news });
+  const result = await advanceSubmission(submission_id, { hotNews: !!hot_news });
 
   if (!result.success) {
     return NextResponse.json(
-      { error: "Processing failed", details: result.error },
+      { error: "Processing failed", status: result.status, details: result.error },
       { status: 500 },
     );
   }
 
   return NextResponse.json({
     success: true,
-    tutorial_id: result.tutorial_id,
-    merged: result.merged,
+    status: result.status,
+    tutorial_id: result.tutorialId,
   });
 }

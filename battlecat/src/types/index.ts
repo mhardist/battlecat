@@ -13,15 +13,61 @@ export type SourceType =
   | "pdf"
   | "linkedin";
 
-/** Processing status of an ingested link */
+/** Processing status of an ingested link (step-level state machine) */
 export type ProcessingStatus =
   | "received"
   | "extracting"
-  | "processing"
+  | "extracted"
+  | "classifying"
+  | "classified"
+  | "generating"
+  | "generated"
+  | "publishing"
   | "published"
-  | "failed";
+  | "failed"
+  | "dead";
 
-/** A raw submission from SMS */
+/** Pipeline step names (correspond to status transitions) */
+export type PipelineStep = "extract" | "classify" | "generate" | "publish";
+
+/** Maps a status to which step should run next */
+export const STATUS_TO_STEP: Record<string, PipelineStep | null> = {
+  received: "extract",
+  extracted: "classify",
+  classified: "generate",
+  generated: "publish",
+  failed: null, // resolved from last_step
+  // terminal statuses
+  published: null,
+  dead: null,
+  // in-progress statuses (shouldn't be queried, but handle gracefully)
+  extracting: "extract",
+  classifying: "classify",
+  generating: "generate",
+  publishing: "publish",
+};
+
+/** Classification result stored as jsonb on submissions */
+export interface ClassificationResult {
+  maturity_level: MaturityLevel;
+  level_relation: LevelRelation;
+  topics: string[];
+  tags: string[];
+  tools_mentioned: string[];
+  difficulty: "beginner" | "intermediate" | "advanced";
+}
+
+/** Generated tutorial stored as jsonb on submissions */
+export interface GeneratedTutorialData {
+  title: string;
+  slug: string;
+  summary: string;
+  body: string;
+  action_items: string[];
+  classification: ClassificationResult;
+}
+
+/** A raw submission from SMS/WhatsApp/web */
 export interface Submission {
   id: string;
   phone_number: string;
@@ -29,6 +75,17 @@ export interface Submission {
   url: string;
   source_type: SourceType;
   status: ProcessingStatus;
+  error_message?: string;
+  retry_count: number;
+  max_retries: number;
+  last_step: string | null;
+  last_error: string | null;
+  extracted_text: string | null;
+  classification: ClassificationResult | null;
+  generated_tutorial: GeneratedTutorialData | null;
+  tutorial_id: string | null;
+  started_at: string | null;
+  completed_at: string | null;
   created_at: string;
 }
 

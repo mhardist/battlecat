@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse, after } from "next/server";
 import { detectSourceType } from "@/lib/extract";
-import { processSubmission } from "@/lib/process-submission";
+import { advanceSubmission } from "@/lib/pipeline";
 
 /** Force dynamic — these routes need runtime env vars */
 export const dynamic = "force-dynamic";
@@ -13,7 +13,7 @@ export const maxDuration = 60;
  *
  * Twilio SMS / WhatsApp webhook endpoint.
  * Receives incoming messages, extracts the URL, stores the submission,
- * and returns TwiML to confirm receipt.
+ * and triggers the pipeline via after().
  *
  * WhatsApp sandbox messages arrive with From="whatsapp:+1xxx" — we
  * normalize the phone number by stripping the "whatsapp:" prefix.
@@ -49,27 +49,54 @@ export async function POST(request: NextRequest) {
   const url = urlMatch[0].replace(/[.,;:!?)]+$/, ""); // Strip trailing punctuation
   const sourceType = detectSourceType(url);
 
-  // Check for duplicate URL submission
   const { createServerClient } = await import("@/lib/supabase");
   const supabase = createServerClient();
 
+  // Check for duplicate URL — but allow retry of failed/dead submissions
   const { data: existing } = await supabase
     .from("submissions")
     .select("id, status")
     .eq("url", url)
-    .in("status", ["published", "processing", "extracting"])
     .limit(1)
     .maybeSingle();
 
   if (existing) {
-    return new NextResponse(
-      twiml("This link has already been submitted and processed."),
-      { headers: { "Content-Type": "text/xml" } },
-    );
+    const retryable = existing.status === "failed" || existing.status === "dead";
+
+    if (!retryable && existing.status !== "received") {
+      // Already published or in progress — skip
+      return new NextResponse(
+        twiml("This link has already been submitted and processed."),
+        { headers: { "Content-Type": "text/xml" } },
+      );
+    }
+
+    if (retryable) {
+      // Reset the failed submission for re-processing
+      await supabase
+        .from("submissions")
+        .update({ status: "received", retry_count: 0, last_error: null })
+        .eq("id", existing.id);
+
+      // Detect hot news flag
+      const textBeforeUrl = body.slice(0, body.indexOf(url));
+      const isHotNews = /\bhot:/i.test(textBeforeUrl);
+
+      after(async () => {
+        console.log(`[ingest] Retrying failed submission ${existing.id} (hot_news: ${isHotNews})`);
+        const result = await advanceSubmission(existing.id, { hotNews: isHotNews });
+        console.log(`[ingest] Retry result for ${existing.id}:`, result);
+      });
+
+      const channel = isWhatsApp ? "WhatsApp" : "SMS";
+      return new NextResponse(
+        twiml(`Retrying your ${sourceType} link via ${channel}. You'll see it on battlecat.ai soon.`),
+        { headers: { "Content-Type": "text/xml" } },
+      );
+    }
   }
 
   // Detect hot news flag: "HOT:" prefix before the URL
-  // e.g. "HOT: https://example.com/article" or "hot: check this out https://..."
   const textBeforeUrl = body.slice(0, body.indexOf(url));
   const isHotNews = /\bhot:/i.test(textBeforeUrl);
 
@@ -94,12 +121,11 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Run processing after the response is sent.
-  // after() keeps the Vercel function alive so processing completes.
+  // Run pipeline after the response is sent.
   after(async () => {
-    console.log(`[ingest] Starting background processing for ${submission.id} (hot_news: ${isHotNews})`);
-    const result = await processSubmission(submission.id, { hotNews: isHotNews });
-    console.log(`[ingest] Processing result for ${submission.id}:`, result);
+    console.log(`[ingest] Starting pipeline for ${submission.id} (hot_news: ${isHotNews})`);
+    const result = await advanceSubmission(submission.id, { hotNews: isHotNews });
+    console.log(`[ingest] Pipeline result for ${submission.id}:`, result);
   });
 
   const channel = isWhatsApp ? "WhatsApp" : "SMS";

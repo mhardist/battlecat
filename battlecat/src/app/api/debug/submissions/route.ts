@@ -40,9 +40,12 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Count by status
+    // Count by status (pipeline step-level statuses)
     const counts: Record<string, number> = {};
-    for (const s of ["received", "extracting", "processing", "published", "failed"]) {
+    for (const s of [
+      "received", "extracting", "extracted", "classifying", "classified",
+      "generating", "generated", "publishing", "published", "failed", "dead",
+    ]) {
       const { count } = await supabase
         .from("submissions")
         .select("*", { count: "exact", head: true })
@@ -95,15 +98,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Reset to received
+    // Reset to received and clear retry state
     await supabase
       .from("submissions")
-      .update({ status: "received", error_message: null })
+      .update({ status: "received", error_message: null, last_error: null, retry_count: 0 })
       .eq("id", submission_id);
 
-    // Process synchronously (no after())
-    const { processSubmission } = await import("@/lib/process-submission");
-    const result = await processSubmission(submission_id);
+    // Process synchronously via pipeline engine
+    const { advanceSubmission } = await import("@/lib/pipeline");
+    const result = await advanceSubmission(submission_id);
 
     return NextResponse.json({
       previous_status: sub.status,

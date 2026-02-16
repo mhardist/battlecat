@@ -157,7 +157,7 @@ export async function POST(request: NextRequest) {
 
   // ── Stage 6: AI tutorial generation ─────────────────────────────────
   if (!dry_run) {
-    const { processSubmission } = await import("@/lib/process-submission");
+    const { advanceSubmission } = await import("@/lib/pipeline");
     const result = await run("6_full_process", async () => {
       // Delete our test submission, re-insert as real
       await supabase.from("submissions").delete().eq("id", submissionId!);
@@ -175,7 +175,7 @@ export async function POST(request: NextRequest) {
 
       if (error) throw new Error(`Re-insert failed: ${error.message}`);
       submissionId = realSub.id;
-      return await processSubmission(realSub.id);
+      return await advanceSubmission(realSub.id);
     });
 
     stages[stages.length - 1].data = result;
