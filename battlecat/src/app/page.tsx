@@ -45,17 +45,38 @@ export default async function Home() {
 
   return (
     <div className="space-y-16">
-      {/* Hero — tight, 3 lines max */}
-      <section className="space-y-4 text-center pt-4">
+      {/* Hero */}
+      <section className="space-y-6 text-center pt-4">
         <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
-          Send a link.{" "}
-          <span className="text-bc-primary">Get a tutorial.</span>
+          Stop scrolling AI content.{" "}
+          <span className="text-bc-primary">Start learning it.</span>
         </h1>
-        <p className="mx-auto max-w-xl text-lg text-bc-text-secondary">
-          Forward a TikTok, article, or tweet. Battlecat turns it into a
-          step-by-step AI tutorial mapped to your skill level.
+        <p className="mx-auto max-w-2xl text-lg text-bc-text-secondary">
+          You see AI tips everywhere — TikToks, tweets, articles — but none of it sticks
+          because there&apos;s no structure. Battlecat takes any link you send and turns it into
+          a hands-on tutorial matched to where you actually are on the AI learning curve.
         </p>
-        <div className="flex items-center justify-center gap-3">
+        <div className="mx-auto grid max-w-2xl gap-3 text-left sm:grid-cols-3">
+          <div className="rounded-lg border border-bc-border bg-bc-surface p-4">
+            <div className="text-lg font-bold text-bc-primary">1. Send a link</div>
+            <p className="mt-1 text-sm text-bc-text-secondary">
+              Forward a TikTok, article, tweet, or YouTube video — anything about AI.
+            </p>
+          </div>
+          <div className="rounded-lg border border-bc-border bg-bc-surface p-4">
+            <div className="text-lg font-bold text-bc-primary">2. We build the tutorial</div>
+            <p className="mt-1 text-sm text-bc-text-secondary">
+              Battlecat extracts the key ideas and creates a step-by-step guide with your skill level in mind.
+            </p>
+          </div>
+          <div className="rounded-lg border border-bc-border bg-bc-surface p-4">
+            <div className="text-lg font-bold text-bc-primary">3. Actually learn it</div>
+            <p className="mt-1 text-sm text-bc-text-secondary">
+              Follow the action items, level up your skills, and track your progress on the AI Maturity Framework.
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center justify-center gap-3 pt-2">
           <Link
             href="/level-up"
             className="rounded-lg bg-bc-primary px-5 py-2.5 font-semibold text-white transition-shadow hover:shadow-lg hover:shadow-bc-primary/25"

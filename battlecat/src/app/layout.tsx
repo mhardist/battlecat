@@ -1,8 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-// import { DarkModeToggle } from "@/components/DarkModeToggle";
-import { MobileNav } from "@/components/MobileNav";
-// import { AchievementProvider } from "@/components/AchievementProvider";
+import { SiteNav, SiteFooter } from "@/components/SiteNav";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -17,18 +14,6 @@ export const metadata: Metadata = {
   },
 };
 
-const NAV_LINKS = [
-  { href: "/", label: "Home" },
-  { href: "/browse", label: "Browse" },
-  { href: "/paths", label: "Paths" },
-  { href: "/tools", label: "Tools" },
-  { href: "/level-up", label: "Level Up" },
-  { href: "/achievements", label: "Rewards" },
-  { href: "/bookmarks", label: "Bookmarks" },
-  { href: "/search", label: "Search" },
-  { href: "/submit", label: "Submit" },
-];
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -40,46 +25,9 @@ export default function RootLayout({
         <link rel="alternate" type="application/rss+xml" title="Battlecat AI" href="/feed.xml" />
       </head>
       <body className="antialiased">
-          <nav className="sticky top-0 z-50 border-b border-bc-border bg-bc-surface/80 backdrop-blur-md">
-            <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
-              <Link
-                href="/"
-                className="text-lg font-bold text-bc-primary"
-              >
-                Battlecat
-                <span className="ml-1 text-xs font-normal text-bc-text-secondary">
-                  AI
-                </span>
-              </Link>
-
-              {/* Desktop nav — hidden on mobile */}
-              <div className="hidden items-center gap-1 md:flex">
-                {NAV_LINKS.map((link) => (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    className="rounded-md px-3 py-1.5 text-sm font-medium text-bc-text-secondary transition-colors hover:bg-bc-primary/10 hover:text-bc-primary"
-                  >
-                    {link.label}
-                  </Link>
-                ))}
-              </div>
-
-              {/* Mobile nav — visible on mobile only */}
-              <div className="flex items-center gap-1 md:hidden">
-                <MobileNav />
-              </div>
-            </div>
-          </nav>
-          <main className="mx-auto max-w-5xl px-4 py-8">{children}</main>
-          <footer className="border-t border-bc-border py-8 text-center text-sm text-bc-text-secondary">
-            <p>
-              Battlecat AI — Built on the{" "}
-              <span className="font-medium text-bc-secondary">
-                AI Maturity Framework
-              </span>
-            </p>
-          </footer>
+        <SiteNav />
+        <main className="mx-auto max-w-5xl px-4 py-8">{children}</main>
+        <SiteFooter />
       </body>
     </html>
   );
