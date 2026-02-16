@@ -53,8 +53,13 @@ export function useAchievementContext() {
 /**
  * Wraps the app, combining data from all localStorage hooks
  * to evaluate achievements and trigger the Sorceress modal.
+ *
+ * Uses a mounted guard to prevent React hydration mismatches:
+ * hooks initialize with defaults on both server and first client render,
+ * then load localStorage data after mount.
  */
 export function AchievementProvider({ children }: { children: ReactNode }) {
+  const [mounted, setMounted] = useState(false);
   const achievements = useAchievements();
   const { bookmarks } = useBookmarks();
   const { ratings } = useRatings();
@@ -69,6 +74,7 @@ export function AchievementProvider({ children }: { children: ReactNode }) {
   const LEVEL_MAP_KEY = "battlecat-tutorial-levels";
 
   useEffect(() => {
+    setMounted(true);
     try {
       const stored = localStorage.getItem(LEVEL_MAP_KEY);
       if (stored) levelMapRef.current = JSON.parse(stored);
@@ -117,25 +123,25 @@ export function AchievementProvider({ children }: { children: ReactNode }) {
   }, [achievements.readTutorialIds, bookmarks.size, ratings, completedCount, isCompleted]);
 
   const doCheck = useCallback(() => {
-    if (!achievements.loaded) return;
+    if (!mounted || !achievements.loaded) return;
     const ext = buildExternalStats();
     const newlyUnlocked = achievements.checkAchievements(ext);
     if (newlyUnlocked.length > 0) {
       setModalQueue(newlyUnlocked);
     }
-  }, [achievements, buildExternalStats]);
+  }, [mounted, achievements, buildExternalStats]);
 
-  // Re-check achievements whenever external stats change
+  // Re-check achievements whenever external stats change (only after mount)
   const prevStatsRef = useRef("");
   useEffect(() => {
-    if (!achievements.loaded) return;
+    if (!mounted || !achievements.loaded) return;
     const ext = buildExternalStats();
     const key = JSON.stringify(ext);
     if (key !== prevStatsRef.current) {
       prevStatsRef.current = key;
       doCheck();
     }
-  }, [achievements.loaded, buildExternalStats, doCheck]);
+  }, [mounted, achievements.loaded, buildExternalStats, doCheck]);
 
   // ── Public actions ──────────────────────────────────────────────────────
 

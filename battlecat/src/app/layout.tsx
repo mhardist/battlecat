@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { SiteNav, SiteFooter } from "@/components/SiteNav";
+import { AchievementProvider } from "@/components/AchievementProvider";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -26,7 +27,9 @@ export default function RootLayout({
       </head>
       <body className="antialiased">
         <SiteNav />
-        <main className="mx-auto max-w-5xl px-4 py-8">{children}</main>
+        <AchievementProvider>
+          <main className="mx-auto max-w-5xl px-4 py-8">{children}</main>
+        </AchievementProvider>
         <SiteFooter />
       </body>
     </html>

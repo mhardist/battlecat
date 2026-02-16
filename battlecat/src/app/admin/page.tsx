@@ -482,6 +482,8 @@ function PipelineView({
 
 /* ───────── Tutorials View ───────── */
 
+type TutorialSort = "newest" | "oldest" | "title-asc" | "title-desc";
+
 function TutorialsView({
   tutorials,
   loading,
@@ -499,8 +501,24 @@ function TutorialsView({
   onArchive: (id: string, action: "archive" | "unarchive") => void;
   onDelete: (id: string) => void;
 }) {
-  const published = tutorials.filter((t) => t.is_published);
-  const archived = tutorials.filter((t) => !t.is_published);
+  const [sort, setSort] = useState<TutorialSort>("newest");
+  const [levelFilter, setLevelFilter] = useState<number | "all">("all");
+
+  const filtered = tutorials.filter(
+    (t) => levelFilter === "all" || t.maturity_level === levelFilter,
+  );
+
+  const sorted = [...filtered].sort((a, b) => {
+    switch (sort) {
+      case "title-asc": return a.title.localeCompare(b.title);
+      case "title-desc": return b.title.localeCompare(a.title);
+      case "oldest": return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+      default: return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    }
+  });
+
+  const published = sorted.filter((t) => t.is_published);
+  const archived = sorted.filter((t) => !t.is_published);
 
   if (loading) {
     return <p className="py-8 text-center text-bc-text-secondary">Loading tutorials...</p>;
@@ -513,6 +531,40 @@ function TutorialsView({
         <div className="flex gap-3 text-sm text-bc-text-secondary">
           <span>{published.length} published</span>
           <span>{archived.length} archived</span>
+        </div>
+      </div>
+
+      {/* Sort + Filter controls */}
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-bc-text-secondary">Sort:</span>
+          <select
+            value={sort}
+            onChange={(e) => setSort(e.target.value as TutorialSort)}
+            className="rounded-md border border-bc-border bg-bc-surface px-2 py-1 text-xs text-foreground focus:border-bc-primary focus:outline-none"
+          >
+            <option value="newest">Newest first</option>
+            <option value="oldest">Oldest first</option>
+            <option value="title-asc">Title A-Z</option>
+            <option value="title-desc">Title Z-A</option>
+          </select>
+        </div>
+
+        <div className="flex items-center gap-1">
+          <span className="text-xs text-bc-text-secondary mr-1">Level:</span>
+          {(["all", 0, 1, 2, 3, 4] as const).map((lvl) => (
+            <button
+              key={String(lvl)}
+              onClick={() => setLevelFilter(lvl)}
+              className={`rounded-md px-2 py-1 text-xs font-medium transition-colors ${
+                levelFilter === lvl
+                  ? "bg-bc-primary text-white"
+                  : "text-bc-text-secondary hover:bg-bc-primary/10 hover:text-bc-primary"
+              }`}
+            >
+              {lvl === "all" ? "All" : `L${lvl}`}
+            </button>
+          ))}
         </div>
       </div>
 
