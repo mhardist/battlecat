@@ -10,6 +10,7 @@ import { ToolBadge } from "@/components/ToolBadge";
 import { TutorialRating } from "@/components/TutorialRating";
 import { MossManBadge } from "@/components/MossManBadge";
 import { TutorialReadTracker } from "@/components/TutorialReadTracker";
+import { CopyMarkdownButton } from "@/components/CopyMarkdownButton";
 import { renderMarkdown } from "@/lib/markdown";
 
 interface Props {
@@ -102,9 +103,21 @@ export default async function TutorialPage({ params }: Props) {
           )}
         </div>
 
-        <h1 className="text-3xl sm:text-4xl font-bold leading-tight tracking-tight">
-          {tutorial.title}
-        </h1>
+        <div className="flex items-start justify-between gap-3">
+          <h1 className="text-3xl sm:text-4xl font-bold leading-tight tracking-tight">
+            {tutorial.title}
+          </h1>
+          <CopyMarkdownButton
+            bodySelector=".tutorial-prose"
+            title={tutorial.title}
+            meta={{
+              date: tutorial.created_at.slice(0, 10),
+              tags: tutorial.topics,
+              level: tutorial.maturity_level,
+              difficulty: tutorial.difficulty,
+            }}
+          />
+        </div>
 
         <p className="text-lg text-bc-text-secondary leading-relaxed">
           {tutorial.summary}
