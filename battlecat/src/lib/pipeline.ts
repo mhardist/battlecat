@@ -294,10 +294,28 @@ export async function advanceSubmission(
   }
 }
 
+/** Intermediate statuses that indicate a Vercel timeout left a submission stranded. */
+const STUCK_STATUSES = [
+  "extracting",
+  "extracted",
+  "classifying",
+  "classified",
+  "generating",
+  "generated",
+  "publishing",
+];
+
 /**
- * Retry all failed submissions that haven't exhausted their retry budget.
+ * Retry all failed AND stuck submissions.
+ *
+ * "Stuck" means the submission is in an intermediate pipeline state
+ * (e.g. `generating`) that was never completed — typically because the
+ * Vercel function timed out mid-step. These are safe to resume because
+ * `advanceSubmission` is idempotent and picks up from the current status.
+ *
  * Processes them one at a time to respect Vercel's execution budget.
- * Returns the count of submissions attempted and succeeded.
+ * Stuck submissions are processed first (they're closest to done),
+ * then failed submissions with remaining retry budget.
  */
 export async function retryAllFailed(
   budgetMs: number = 55_000,
@@ -305,26 +323,37 @@ export async function retryAllFailed(
   const supabase = createServerClient();
   const startTime = Date.now();
 
-  const { data: pending } = await supabase
+  // 1. Fetch stuck intermediate submissions (prioritize — they're closest to done)
+  const { data: stuck } = await supabase
     .from("submissions")
-    .select("id, retry_count, max_retries")
+    .select("id, status, retry_count, max_retries")
+    .in("status", STUCK_STATUSES)
+    .order("created_at", { ascending: true })
+    .limit(10);
+
+  // 2. Fetch failed submissions with retry budget remaining
+  const { data: failed } = await supabase
+    .from("submissions")
+    .select("id, status, retry_count, max_retries")
     .eq("status", "failed")
     .order("created_at", { ascending: true })
     .limit(10);
 
-  if (!pending || pending.length === 0) {
-    return { attempted: 0, succeeded: 0, results: [] };
-  }
-
-  // Filter to those with retry budget remaining
-  const retryable = pending.filter(
+  const retryableFailed = (failed ?? []).filter(
     (s) => (s.retry_count ?? 0) < (s.max_retries ?? 3),
   );
+
+  // Process stuck first, then failed
+  const pending = [...(stuck ?? []), ...retryableFailed];
+
+  if (pending.length === 0) {
+    return { attempted: 0, succeeded: 0, results: [] };
+  }
 
   let succeeded = 0;
   const results: Array<{ id: string; result: PipelineResult }> = [];
 
-  for (const sub of retryable) {
+  for (const sub of pending) {
     const elapsed = Date.now() - startTime;
     if (elapsed > budgetMs) {
       console.log(`[pipeline] retryAllFailed: budget exhausted after ${results.length} submissions`);
@@ -332,6 +361,7 @@ export async function retryAllFailed(
     }
 
     const remainingBudget = budgetMs - elapsed;
+    console.log(`[pipeline] retryAllFailed: advancing ${sub.id} (status=${sub.status})`);
     const result = await advanceSubmission(sub.id, { budgetMs: remainingBudget });
     results.push({ id: sub.id, result });
 

@@ -7,7 +7,9 @@ export const maxDuration = 60;
 /**
  * POST /api/admin/retry-all
  *
- * Retry all failed submissions that haven't exhausted their retry budget.
+ * Retry all stuck and failed submissions.
+ * Stuck = intermediate states left by Vercel timeouts (generating, etc.).
+ * Failed = transient errors with retry budget remaining.
  * Processes sequentially with time-budget awareness (55s max).
  *
  * Body: { secret: string }
