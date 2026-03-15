@@ -57,8 +57,11 @@ export async function GET(request: NextRequest) {
 /**
  * PATCH /api/admin/tutorials
  *
- * Archive (unpublish) a tutorial.
- * Body: { tutorial_id: string, action: "archive" | "unarchive", secret: string }
+ * Actions:
+ *   - archive / unarchive: toggle is_published
+ *     Body: { tutorial_id: string, action: "archive" | "unarchive", secret?: string }
+ *   - update_content: update title, body, and other text fields
+ *     Body: { tutorial_id: string, action: "update_content", updates: Record<string, unknown>, secret?: string }
  */
 export async function PATCH(request: NextRequest) {
   if (!(await authorizeFromBody(request))) {
@@ -66,11 +69,12 @@ export async function PATCH(request: NextRequest) {
   }
 
   try {
-    const { tutorial_id, action } = await request.json();
+    const body = await request.json();
+    const { tutorial_id, action } = body;
 
-    if (!tutorial_id || !["archive", "unarchive"].includes(action)) {
+    if (!tutorial_id || !["archive", "unarchive", "update_content"].includes(action)) {
       return NextResponse.json(
-        { error: "tutorial_id and action (archive|unarchive) required" },
+        { error: "tutorial_id and action (archive|unarchive|update_content) required" },
         { status: 400 },
       );
     }
@@ -78,6 +82,53 @@ export async function PATCH(request: NextRequest) {
     const { createServerClient } = await import("@/lib/supabase");
     const supabase = createServerClient();
 
+    if (action === "update_content") {
+      const allowedFields = [
+        "title",
+        "body",
+        "summary",
+        "slug",
+        "tags",
+        "tools_mentioned",
+        "action_items",
+        "topics",
+      ];
+      const updates: Record<string, unknown> = {};
+      const rawUpdates = body.updates;
+
+      if (!rawUpdates || typeof rawUpdates !== "object") {
+        return NextResponse.json(
+          { error: "updates object required for update_content action" },
+          { status: 400 },
+        );
+      }
+
+      for (const key of Object.keys(rawUpdates)) {
+        if (allowedFields.includes(key)) {
+          updates[key] = rawUpdates[key];
+        }
+      }
+
+      if (Object.keys(updates).length === 0) {
+        return NextResponse.json(
+          { error: `No allowed fields to update. Allowed: ${allowedFields.join(", ")}` },
+          { status: 400 },
+        );
+      }
+
+      const { error } = await supabase
+        .from("tutorials")
+        .update(updates)
+        .eq("id", tutorial_id);
+
+      if (error) {
+        return NextResponse.json({ error: error.message }, { status: 500 });
+      }
+
+      return NextResponse.json({ success: true, action, updated_fields: Object.keys(updates) });
+    }
+
+    // archive / unarchive
     const { error } = await supabase
       .from("tutorials")
       .update({ is_published: action === "unarchive" })
