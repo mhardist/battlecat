@@ -91,28 +91,6 @@ export default function BrowsePage() {
         onSelectDifficulty={setSelectedDifficulty}
       />
 
-      {/* Topic Pills */}
-      <div className="flex flex-wrap gap-2">
-        <span className="self-center text-xs font-medium text-bc-text-secondary">
-          Topics:
-        </span>
-        {allTopics.map((topic) => (
-          <button
-            key={topic}
-            onClick={() =>
-              setSelectedTopic(selectedTopic === topic ? null : topic)
-            }
-            className={`rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
-              selectedTopic === topic
-                ? "bg-bc-primary text-white"
-                : "bg-bc-primary/10 text-bc-primary hover:bg-bc-primary/20"
-            }`}
-          >
-            {topic}
-          </button>
-        ))}
-      </div>
-
       {/* Results */}
       {filtered.length > 0 ? (
         <div className="grid gap-3">
@@ -140,6 +118,28 @@ export default function BrowsePage() {
           </p>
         </div>
       )}
+
+      {/* Topic Pills */}
+      <div className="flex flex-wrap gap-2">
+        <span className="self-center text-xs font-medium text-bc-text-secondary">
+          Topics:
+        </span>
+        {allTopics.map((topic) => (
+          <button
+            key={topic}
+            onClick={() =>
+              setSelectedTopic(selectedTopic === topic ? null : topic)
+            }
+            className={`rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
+              selectedTopic === topic
+                ? "bg-bc-primary text-white"
+                : "bg-bc-primary/10 text-bc-primary hover:bg-bc-primary/20"
+            }`}
+          >
+            {topic}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
