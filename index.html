@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>HiCentral - O'ahu Home Search, Built for Hawai'i</title>
+<meta name="description" content="Search O'ahu homes the local way: fee simple and leasehold side by side, true monthly costs, flood and tsunami awareness, and island-specific details on every listing." />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌺</text></svg>" />
+<link rel="stylesheet" href="css/styles.css" />
+<script>
+  // Set theme before paint to avoid flash
+  (function () {
+    var saved = localStorage.getItem("himls-theme");
+    var dark = saved ? saved === "dark" : window.matchMedia("(prefers-color-scheme: dark)").matches;
+    document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+  })();
+</script>
+</head>
+<body>
+
+<header class="site-head">
+  <div class="wrap">
+    <a class="brand" href="#top" aria-label="HiCentral home">
+      <span class="brand-name">HiCentral</span>
+      <span class="brand-sub">O'ahu MLS concept</span>
+    </a>
+    <nav class="site-nav" aria-label="Primary">
+      <a href="#search">Search</a>
+      <a href="#learn">Hawai'i 101</a>
+      <a href="#regions">Regions</a>
+    </nav>
+    <button class="theme-btn" id="themeBtn" aria-label="Toggle dark mode">
+      <svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M233.54 142.23a8 8 0 0 0-8-2 88.08 88.08 0 0 1-109.8-109.8 8 8 0 0 0-10-10 104.84 104.84 0 0 0-52.91 37A104 104 0 0 0 136 224a103.09 103.09 0 0 0 62.52-20.88 104.84 104.84 0 0 0 37-52.91 8 8 0 0 0-1.98-7.98Z"/></svg>
+    </button>
+  </div>
+</header>
+
+<main id="top">
+
+  <section class="hero">
+    <div class="wrap hero-inner">
+      <div>
+        <h1>Home search, built for <em>O'ahu</em>.</h1>
+        <p class="hero-sub">Fee simple and leasehold side by side, true monthly cost on every card, plus details mainland sites never show.</p>
+        <form class="search-bar" id="heroSearch">
+          <div class="tenure-toggle" role="group" aria-label="Land tenure">
+            <button type="button" data-tenure="all" aria-pressed="true">All</button>
+            <button type="button" data-tenure="FS" aria-pressed="false">Fee Simple</button>
+            <button type="button" data-tenure="LH" aria-pressed="false">Leasehold</button>
+          </div>
+          <input type="search" id="q" list="placesList" placeholder="Neighborhood, address, or building" aria-label="Search listings" />
+          <datalist id="placesList"></datalist>
+          <button class="btn" type="submit">Search homes</button>
+        </form>
+      </div>
+      <div class="hero-img">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/Diamond_Head_Crater_%2B_Waikiki_Beach_%2815361623910%29.jpg/1280px-Diamond_Head_Crater_%2B_Waikiki_Beach_%2815361623910%29.jpg" alt="Diamond Head crater rising behind Waikiki Beach" width="1280" height="853" fetchpriority="high" />
+      </div>
+    </div>
+  </section>
+
+  <section class="search-section" id="search">
+    <div class="wrap search-grid">
+
+      <aside class="filter-rail" aria-label="Filters">
+        <div class="rail-head">
+          <span>Filters</span>
+          <button id="railClose" type="button" aria-label="Close filters">&times;</button>
+        </div>
+        <div class="filter-group">
+          <label for="regionSel">Region</label>
+          <select id="regionSel">
+            <option value="all">All of O'ahu</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <span class="flabel">Price</span>
+          <div class="filter-row">
+            <input type="number" id="priceMin" placeholder="Min" min="0" step="25000" aria-label="Minimum price" />
+            <input type="number" id="priceMax" placeholder="Max" min="0" step="25000" aria-label="Maximum price" />
+          </div>
+        </div>
+
+        <div class="filter-group">
+          <div class="filter-row">
+            <select id="bedsMin" aria-label="Minimum bedrooms">
+              <option value="0">Any beds</option>
+              <option value="1">1+ beds</option>
+              <option value="2">2+ beds</option>
+              <option value="3">3+ beds</option>
+              <option value="4">4+ beds</option>
+            </select>
+            <select id="bathsMin" aria-label="Minimum bathrooms">
+              <option value="0">Any baths</option>
+              <option value="1">1+ baths</option>
+              <option value="2">2+ baths</option>
+              <option value="3">3+ baths</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="filter-group">
+          <span class="flabel">Property type</span>
+          <label class="check"><input type="checkbox" data-type="single" checked /> Single family</label>
+          <label class="check"><input type="checkbox" data-type="condo" checked /> Condo</label>
+          <label class="check"><input type="checkbox" data-type="town" checked /> Townhome</label>
+          <label class="check"><input type="checkbox" data-type="cpr" checked /><span> CPR detached <small>A house titled as a condo on a shared lot</small></span></label>
+        </div>
+
+        <div class="filter-group lh-only" id="lhFilters">
+          <span class="flabel">Leasehold terms</span>
+          <label for="leaseYears">Lease years remaining <output id="leaseYearsOut">any</output></label>
+          <input type="range" id="leaseYears" min="0" max="40" step="5" value="0" />
+          <label class="check"><input type="checkbox" id="feeAvail" /><span> Fee available <small>Lessor is selling the land under the unit</small></span></label>
+          <label for="leaseRentMax">Max lease rent ($/mo)</label>
+          <input type="number" id="leaseRentMax" placeholder="Any" min="0" step="50" />
+        </div>
+
+        <div class="filter-group">
+          <label for="maintMax">Max maintenance + HOA ($/mo)</label>
+          <input type="number" id="maintMax" placeholder="Any" min="0" step="50" />
+        </div>
+
+        <div class="filter-group">
+          <span class="flabel">Island factors</span>
+          <label class="check"><input type="checkbox" id="fldSafe" /><span> Outside high-risk flood zones <small>Excludes FEMA AE and VE</small></span></label>
+          <label class="check"><input type="checkbox" id="tsuSafe" /> Outside tsunami evacuation zone</label>
+          <label class="check"><input type="checkbox" id="sewerOnly" /><span> Connected to sewer <small>Cesspools must convert by 2050</small></span></label>
+          <label class="check"><input type="checkbox" id="pvOwned" /><span> Owned solar PV <small>Grandfathered NEM transfers with sale</small></span></label>
+          <label class="check"><input type="checkbox" id="strOnly" /><span> Legal short-term rental <small>Resort-zoned under Bill 41</small></span></label>
+        </div>
+
+        <button class="filter-reset" id="resetBtn" type="button">Reset all filters</button>
+      </aside>
+
+      <div>
+        <div class="results-head">
+          <p class="results-count" id="resultsCount" role="status"></p>
+          <div class="results-tools">
+            <button class="tool-btn" id="filtersToggle" type="button">Filters</button>
+            <button class="tool-btn" id="viewToggle" type="button" aria-pressed="false">Map</button>
+            <button class="tool-btn" id="savedOnly" type="button" aria-pressed="false">
+              <svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true" width="14" height="14"><path d="M178 40c-20.65 0-38.73 8.88-50 23.89C116.73 48.88 98.65 40 78 40a62.07 62.07 0 0 0-62 62c0 70 103.79 126.66 108.21 129a8 8 0 0 0 7.58 0C136.21 228.66 240 172 240 102a62.07 62.07 0 0 0-62-62Z"/></svg>
+              Saved
+            </button>
+            <div class="sort-box">
+              <label for="sortSel">Sort</label>
+              <select id="sortSel">
+                <option value="cost">True monthly cost</option>
+                <option value="priceAsc">Price: low to high</option>
+                <option value="priceDesc">Price: high to low</option>
+                <option value="leaseYears">Lease years remaining</option>
+                <option value="newest">Year built: newest</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="chip-bar" id="chipBar" hidden></div>
+        <div class="map-wrap" id="mapWrap" hidden>
+          <div class="map-canvas" id="mapCanvas" role="img" aria-label="Map of O'ahu with listing locations"></div>
+          <p class="map-credit">Map tiles &copy; OpenStreetMap contributors. Pins use county public-record coordinates.</p>
+        </div>
+        <div class="cards" id="cards"></div>
+      </div>
+
+    </div>
+  </section>
+
+  <section class="learn" id="learn">
+    <div class="wrap">
+      <h2>Buying here is different. Here's how.</h2>
+      <p class="lede">Hawai'i real estate runs on rules and vocabulary that mainland search sites were never built for. The essentials, in plain language:</p>
+      <div class="learn-grid">
+
+        <article class="learn-card feature span-7 reveal">
+          <h3>Leasehold, explained</h3>
+          <p>On most of the mainland you always buy the land. On O'ahu, a large share of condos sit on land owned by estates and trusts. Buying leasehold means you own the home but rent the ground under it.</p>
+          <ul>
+            <li><span class="term">Lease rent</span> is a monthly payment on top of your mortgage and maintenance fee.</li>
+            <li><span class="term">Expiration matters most.</span> Under about 35 years left, financing gets hard; under 20, plan on cash.</li>
+            <li><span class="term">Renegotiation dates</span> can step the rent up sharply mid-lease.</li>
+            <li><span class="term">Fee available</span> means you can buy the land and convert to fee simple.</li>
+          </ul>
+        </article>
+
+        <article class="learn-card span-5 reveal">
+          <h3>True monthly cost</h3>
+          <p>A $299k leasehold in Waikiki can cost more per month than a $455k fee simple in Mo'ili'ili. Every card here totals mortgage, maintenance fee, lease rent, property tax, and insurance, and shows which utilities the maintenance fee already covers. Honolulu's home exemption and Residential A tier are built into the estimate.</p>
+        </article>
+
+        <article class="learn-card span-4 reveal">
+          <h3>CPR detached homes</h3>
+          <p>Many "condos" on O'ahu are actually houses. A Condominium Property Regime splits one lot into separately sellable homes. It looks like a house, titles like a condo, and often shares a driveway.</p>
+        </article>
+
+        <article class="learn-card span-4 reveal">
+          <h3>Short-term rentals</h3>
+          <p>Honolulu's Bill 41 sets a 90-day minimum rental outside resort zones. If a listing is marketed for vacation-rental income, check the badge: only resort-zoned properties qualify legally.</p>
+        </article>
+
+        <article class="learn-card span-4 reveal">
+          <h3>Cesspools</h3>
+          <p>Hawai'i requires every cesspool converted by 2050, typically $20k to $50k. Wastewater type is a real line item here, so it's a filter, not fine print.</p>
+        </article>
+
+        <article class="learn-card span-6 reveal">
+          <h3>Water on all sides</h3>
+          <p>Coastal O'ahu listings carry FEMA flood zones (AE and VE drive mandatory insurance), tsunami evacuation zones, and the state's sea-level-rise exposure disclosure. We surface all three on every listing instead of leaving them to escrow week.</p>
+        </article>
+
+        <article class="learn-card span-6 reveal">
+          <h3>Hawaiian Home Lands</h3>
+          <p>DHHL homesteads are 99-year leases at $1 per year, reserved for beneficiaries of 50% or greater Native Hawaiian ancestry. They're a distinct market with their own badge and eligibility rules, treated with the clarity they deserve.</p>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <section class="regions" id="regions">
+    <div class="wrap">
+      <h2>Browse the island by region</h2>
+      <p class="lede">O'ahu shops by coastline and climate: windward green, leeward sun, town convenience, country quiet. Mauka is toward the mountains; makai is toward the sea.</p>
+      <div class="region-grid" id="regionGrid"></div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-foot">
+  <div class="wrap">
+    <p><strong>HiCentral redesign concept.</strong> All listings, prices, fees, and MLS numbers on this page are fictional demo data. Tax, insurance, and payment figures are illustrative estimates, not quotes.</p>
+    <p>A Hawai'i-first rethink of hicentral.com for the Honolulu Board of REALTORS.</p>
+  </div>
+</footer>
+
+<div class="overlay" id="overlay" role="dialog" aria-modal="true" aria-label="Listing details">
+  <div class="sheet" id="sheet"></div>
+</div>
+
+<script src="js/data.js"></script>
+<script src="js/public.js"></script>
+<script src="js/details.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
